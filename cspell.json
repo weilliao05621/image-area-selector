@@ -12,5 +12,5 @@
   "allowCompoundWords": true,
   "enableFiletypes": ["*"],
   "includeRegExpList": ["[\u0020-\u024F]"],
-  "words": ["nofilter", "nvmrc"]
+  "words": ["nofilter", "nvmrc", "zustand"]
 }
