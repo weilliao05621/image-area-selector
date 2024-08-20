@@ -1,5 +1,11 @@
 import styled from "@emotion/styled";
 
+// constants
+import {
+  MAX_VIEWER_HEIGHT,
+  MAX_VIEWER_WIDTH,
+} from "@/constants/layout.constant";
+
 function isFilledArray(data: unknown) {
   return Array.isArray(data) && data.length > 0;
 }
@@ -35,10 +41,9 @@ function JsonViewer(props: JsonViewerProps) {
 }
 
 const Wrapper = styled.div`
-  // TODO: fix magic num
-  width: 548px;
-  height: 703px;
-  background-color: #2a3948;
+  width: ${MAX_VIEWER_WIDTH}px;
+  height: ${MAX_VIEWER_HEIGHT}px;
+  background-color: ${(props) => props.theme.color.panel.bg.code};
   margin-left: 136px;
 `;
 

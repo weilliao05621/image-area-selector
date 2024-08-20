@@ -18,7 +18,7 @@ import {
   DEFAULT_SELECTION_COLOR,
   OVERLAPPED_WARNING_COLOR,
 } from "./constants";
-import { MAX_IMAGE_CONTAINER_WIDTH } from "@/constants/design.constant";
+import { MAX_IMAGE_CONTAINER_WIDTH } from "@/constants/layout.constant";
 import SelectionArea from "./SelectionArea";
 
 const START_ID_ORDER = 1 as SelectionId;

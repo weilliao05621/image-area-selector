@@ -1,5 +1,6 @@
 import { type MouseEvent } from "react";
 
+import { useTheme } from "@emotion/react";
 import styled from "@emotion/styled";
 
 // utils
@@ -14,8 +15,7 @@ import { DeleteOutlined } from "@ant-design/icons";
 import { DEFAULT_SELECTION_COLOR, OVERLAPPED_WARNING_COLOR } from "./constants";
 
 const ICON_MARGIN = 8;
-const ICON_SIZE = 16;
-const SPACE_FOR_ICON = ICON_MARGIN + ICON_SIZE + 8;
+const EXTRA_SPACE_FOR_ICON = 8;
 
 function SelectionArea(props: {
   selection: Selection;
@@ -28,6 +28,8 @@ function SelectionArea(props: {
   iconHidden?: boolean;
   index?: number;
 }) {
+  const theme = useTheme();
+  const iconSize = parseInt(theme.icon.size.sm);
   const top = getBoundary(props.selection.startY, props.selection.endY, "min");
   const left = getBoundary(props.selection.startX, props.selection.endX, "min");
   const width = getSelectedAreaDimension(
@@ -39,8 +41,10 @@ function SelectionArea(props: {
     props.selection.endY,
   );
 
+  const validIndexSpace = ICON_MARGIN + EXTRA_SPACE_FOR_ICON + iconSize;
+
   const shouldPutIndexOutside =
-    width <= SPACE_FOR_ICON || height <= SPACE_FOR_ICON;
+    width <= validIndexSpace || height <= validIndexSpace;
 
   return (
     <>
@@ -72,7 +76,7 @@ function SelectionArea(props: {
             style={{
               top: shouldPutIndexOutside ? top : top + ICON_MARGIN,
               left: shouldPutIndexOutside
-                ? left - ICON_MARGIN - ICON_SIZE
+                ? left - ICON_MARGIN - iconSize
                 : left + ICON_MARGIN,
             }}
           >
@@ -100,12 +104,11 @@ const StyledDeleteOutlined = styled(DeleteOutlined)`
   display: flex;
   align-items: center;
   justify-content: center;
-  // TODO: use theme
-  color: #c5c5c7;
-  width: ${ICON_SIZE}px;
-  height: ${ICON_SIZE}px;
+  color: ${(props) => props.theme.icon.color.gray};
+  width: ${(props) => props.theme.icon.size.sm};
+  height: ${(props) => props.theme.icon.size.sm};
   padding: 4px;
-  border: 1px solid #c5c5c7;
+  border: 1px solid ${(props) => props.theme.icon.color.gray};
   border-radius: 2px;
   background-color: white;
   box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
@@ -117,14 +120,13 @@ const IndexCircle = styled.div`
   justify-content: center;
   align-items: center;
   color: black;
-  width: ${ICON_SIZE}px;
-  height: ${ICON_SIZE}px;
+  width: ${(props) => props.theme.icon.size.sm};
+  height: ${(props) => props.theme.icon.size.sm};
   padding: 2px;
   font-size: 12px;
   border-radius: 50px;
 
-  // TODO: use theme
-  background-color: #c5c5c760;
+  background-color: ${(props) => props.theme.icon.color.gray}60;
 `;
 
 export default SelectionArea;

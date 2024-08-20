@@ -11,7 +11,7 @@ import type { ImageInfo } from "@/types/image.type";
 import {
   DEFAULT_IMAGE_CONTAINER_HEIGHT,
   MAX_IMAGE_CONTAINER_WIDTH,
-} from "@/constants/design.constant";
+} from "@/constants/layout.constant";
 
 interface ImageUploaderProps {
   /** @props execute side effect after image uploaded */
@@ -85,8 +85,7 @@ const DefaultContentContainer = styled.div`
   align-items: center;
   user-select: none;
   cursor: pointer;
-  // TODO: 改成 theme
-  border-radius: 8px;
-  color: #c5c5c7;
-  border: 1px solid #d7dbdd;
+  border-radius: ${(props) => props.theme.borderRadius.lg};
+  color: ${(props) => props.theme.icon.color.gray};
+  border: 1px solid ${(props) => props.theme.color.border[0]};
 `;
