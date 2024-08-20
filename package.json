@@ -14,7 +14,9 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "checkTypes": "tsc --noEmit",
     "preview": "vite preview",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "node:esm-base": "node --no-warnings=ExperimentalWarning --loader ts-node/esm",
+    "type:theme": "npm run node:esm-base -- scripts/theme-type.ts"
   },
   "dependencies": {
     "@ant-design/icons": "^5.4.0",
@@ -41,6 +43,7 @@
     "husky": "^8.0.3",
     "lint-staged": "^15.2.0",
     "prettier": "^3.1.1",
+    "ts-node": "^10.9.2",
     "typescript": "^5.2.2",
     "vite": "^5.0.8"
   }
