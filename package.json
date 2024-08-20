@@ -17,6 +17,7 @@
     "prepare": "husky install"
   },
   "dependencies": {
+    "@ant-design/icons": "^5.4.0",
     "@emotion/react": "^11.13.0",
     "@emotion/styled": "^11.13.0",
     "react": "^18.2.0",
