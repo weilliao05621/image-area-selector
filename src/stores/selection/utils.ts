@@ -13,8 +13,8 @@ export function generatePreviewData(selection: Selection, ratio: number) {
   const { startX, endX, startY, endY } = selection;
   return {
     x: covertSizeToOrigin(getSelectedAreaCenter(startX, endX), ratio),
-    y: covertSizeToOrigin(getSelectedAreaCenter(startY, startY), ratio),
-    width: covertSizeToOrigin(getSelectedAreaDimension(startX, startY), ratio),
+    y: covertSizeToOrigin(getSelectedAreaCenter(startY, endY), ratio),
+    width: covertSizeToOrigin(getSelectedAreaDimension(startX, endX), ratio),
     height: covertSizeToOrigin(getSelectedAreaDimension(startY, endY), ratio),
   };
 }
