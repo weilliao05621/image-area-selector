@@ -6,11 +6,16 @@ import { ImageInfo } from "@/types/image.type";
 
 type UploadObjectUrl = Brand<string, "UploadObjectUrl">;
 
-function createImageInfoPromise(url: UploadObjectUrl): Promise<ImageInfo> {
-  return new Promise((res, rej) => {
-    try {
-      const img = new Image();
+const DEFAULT_RESOLVED_IMAGE = { width: 0, height: 0, url: "" };
 
+function createImageInfoPromise(
+  file: File,
+  getUrl: (file: File) => UploadObjectUrl,
+): Promise<ImageInfo> {
+  return new Promise((res) => {
+    try {
+      const url = getUrl(file);
+      const img = new Image();
       img.onload = () => {
         const imageInfo = {
           width: img.width,
@@ -23,7 +28,8 @@ function createImageInfoPromise(url: UploadObjectUrl): Promise<ImageInfo> {
       img.src = url;
     } catch (e: unknown) {
       if (e instanceof Error) {
-        rej(e.message);
+        console.error(e.message);
+        res(DEFAULT_RESOLVED_IMAGE);
       }
     }
   });
@@ -31,7 +37,6 @@ function createImageInfoPromise(url: UploadObjectUrl): Promise<ImageInfo> {
 
 function useUploadImage() {
   const currentObjectUrl = useRef<UploadObjectUrl | null>(null);
-  const hasUploaded = useRef<boolean>(false);
 
   const setObjectUrl = (file: File) => {
     if (currentObjectUrl.current) {
@@ -41,14 +46,10 @@ function useUploadImage() {
     return currentObjectUrl.current;
   };
 
-  const setUploadImg = (file: File) => {
-    const url = setObjectUrl(file);
-    const promiseObj = createImageInfoPromise(url);
-    hasUploaded.current = true;
-    return promiseObj;
-  };
+  const getUploadedImagePromise = (file: File) =>
+    createImageInfoPromise(file, setObjectUrl);
 
-  return setUploadImg;
+  return getUploadedImagePromise;
 }
 
 export { useUploadImage };

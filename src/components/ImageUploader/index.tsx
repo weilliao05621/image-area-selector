@@ -17,14 +17,14 @@ interface ImageUploaderProps {
   /** @props execute side effect after image uploaded */
   onUploaded: (image: ImageInfo) => void;
   /** @props children display how the upload should be like */
-  defaultContent?: ReactNode;
+  actionReminderContent?: ReactNode;
 }
 
-/** @description handle input file & generate info of the uploaded image*/
+/** @description handle input file & generate info of the uploaded image */
 function ImageUploader(props: ImageUploaderProps) {
   // HOOKS
   const inputRef = useRef<HTMLInputElement>(null);
-  const setUploadImg = useUploadImage();
+  const getUploadedImagePromise = useUploadImage();
 
   // HANDLERS
   const handleUpload = () => {
@@ -36,16 +36,16 @@ function ImageUploader(props: ImageUploaderProps) {
   ) => {
     if (e.target.files! && e.target.files[0]!) {
       const file = e.target.files[0];
-      const imageInfo = await setUploadImg(file);
+      const imageInfo = await getUploadedImagePromise(file);
       props.onUploaded(imageInfo);
     }
   };
 
   // RENDER
-  const defaultContent = props?.defaultContent ? (
-    props.defaultContent
+  const actionReminder = props?.actionReminderContent ? (
+    props.actionReminderContent
   ) : (
-    <DefaultContentContainer>Upload Image</DefaultContentContainer>
+    <DefaultUploadReminder>Upload Image</DefaultUploadReminder>
   );
 
   return (
@@ -56,7 +56,9 @@ function ImageUploader(props: ImageUploaderProps) {
         accept="image/*"
         onChange={handleFileUpload}
       />
-      <ImageContainer onClick={handleUpload}>{defaultContent}</ImageContainer>
+      <UploadActionBlock onClick={handleUpload}>
+        {actionReminder}
+      </UploadActionBlock>
     </>
   );
 }
@@ -70,13 +72,12 @@ const StyledInput = styled.input`
   height: 0;
 `;
 
-const ImageContainer = styled.div`
+const UploadActionBlock = styled.div`
   max-width: ${MAX_IMAGE_CONTAINER_WIDTH}px;
-  width: 100%;
   min-height: ${DEFAULT_IMAGE_CONTAINER_HEIGHT}px;
 `;
 
-const DefaultContentContainer = styled.div`
+const DefaultUploadReminder = styled.div`
   width: ${MAX_IMAGE_CONTAINER_WIDTH}px;
   height: ${DEFAULT_IMAGE_CONTAINER_HEIGHT}px;
   display: flex;
