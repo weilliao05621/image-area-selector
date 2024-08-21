@@ -8,5 +8,5 @@ export const FLIPPED_RESIZE_CORNER_CURSORS = [
   "nwse-resize",
 ] as const;
 
-export const DEFAULT_SELECTION_COLOR = "black";
+export const DEFAULT_SELECTION_COLOR = "blue";
 export const OVERLAPPED_WARNING_COLOR = "red";

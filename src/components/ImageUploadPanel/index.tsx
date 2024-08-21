@@ -33,6 +33,7 @@ const Layout = styled.div`
   height: ${MAX_IMAGE_UPLOAD_PANEL_HEIGHT}px;
   background-color: ${(props) => props.theme.color.panel.bg.image};
   border-radius: ${(props) => props.theme.borderRadius.lg};
+  overflow: hidden;
   box-shadow: ${(props) => props.theme.color.palette.black}60 0px 20px 30px -10px;
 `;
 
@@ -41,7 +42,6 @@ const Header = styled.div`
   width: 100%;
   display: flex;
   align-items: center;
-  border-radius: ${(props) => props.theme.borderRadius.lg};
   background-color: ${(props) => props.theme.color.panel.header};
 `;
 
