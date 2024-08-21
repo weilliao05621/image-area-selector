@@ -18,18 +18,15 @@ import {
   DEFAULT_SELECTION_COLOR,
   OVERLAPPED_WARNING_COLOR,
 } from "./constants";
-import {
-  MAX_IMAGE_CONTAINER_WIDTH,
-  MAX_IMAGE_UPLOAD_PANEL_CONTENT_HEIGHT,
-} from "@/constants/layout.constant";
 import SelectionArea from "./SelectionArea";
 
 const START_ID_ORDER = 1 as SelectionId;
 const CORNER_SQUARE_SIZE = 6;
 
 interface MarqueeSelectionProps {
-  src: string;
-  height: number;
+  containerHeight: number;
+  constrainX: (x: number) => number;
+  constrainY: (y: number) => number;
 }
 
 // FIX: improve cursor styling
@@ -39,7 +36,7 @@ interface MarqueeSelectionProps {
  *              which are both states that are updated at every interaction.
  *              Since it doesn't rely on other components, no need to use optimization hooks for preventing re-rendering.
  * */
-const MarqueeSelection = ({ src, height }: MarqueeSelectionProps) => {
+const MarqueeSelection = (props: MarqueeSelectionProps) => {
   // HOOKS
   const { selections, setSelection, updateSelection, deleteSelection } =
     useSelectionStore();
@@ -80,12 +77,10 @@ const MarqueeSelection = ({ src, height }: MarqueeSelectionProps) => {
     if (e.target !== e.currentTarget) return;
     shouldMousemoveActivate.current = true;
 
-    if (!selectionContainerBoundingClientRect.current) {
-      const { left, top } =
-        selectionContainerRef.current!.getBoundingClientRect();
-      selectionContainerBoundingClientRect.current = { left, top };
-    }
-    const { left, top } = selectionContainerBoundingClientRect.current;
+    const rect = selectionContainerRef.current?.getBoundingClientRect();
+    const left = rect?.left ?? 0;
+    const top = rect?.top ?? 0;
+    selectionContainerBoundingClientRect.current = { left, top };
     const startX = e.clientX - left;
     const startY = e.clientY - top;
 
@@ -118,8 +113,8 @@ const MarqueeSelection = ({ src, height }: MarqueeSelectionProps) => {
 
     // mousedown has constrain drawing on image outside or exist selections
     // so mousemove should constrain  drawing on image outside as well
-    const endX = constrainX(e.clientX - left);
-    const endY = constrainY(e.clientY - top);
+    const endX = props.constrainX(e.clientX - left);
+    const endY = props.constrainY(e.clientY - top);
 
     let selectionForOverlappingFeedback = null;
 
@@ -190,14 +185,6 @@ const MarqueeSelection = ({ src, height }: MarqueeSelectionProps) => {
   };
 
   // UTILS
-  const constrainX = (x: number) => {
-    return Math.min(Math.max(x, 0), MAX_IMAGE_CONTAINER_WIDTH);
-  };
-
-  const constrainY = (y: number) => {
-    return Math.min(Math.max(y, 0), height);
-  };
-
   const isOverlappingExistingSelection = (x: number, y: number): boolean => {
     return selections.some((selection) => {
       const { startX, startY, endX, endY } = selection;
@@ -308,77 +295,60 @@ const MarqueeSelection = ({ src, height }: MarqueeSelectionProps) => {
   };
 
   return (
-    <Wrapper>
-      <UploadedImage src={src} alt="for marquee selections" draggable={false} />
-      <SelectionContainer
-        ref={selectionContainerRef}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        style={{
-          cursor: "crosshair",
-        }}
-      >
-        {selections.map((selection, index) => (
-          <Fragment key={selection.id}>
-            <SelectionArea
-              onMouseOver={() => {
-                isHoveringExistedSelection.current = true;
-                requestAnimationFrame(() => {
-                  selectionContainerRef.current!.style.cursor =
-                    isOverlapping.current ? "crosshair" : "grab";
-                });
-              }}
-              onMouseOut={() => {
-                isHoveringExistedSelection.current = false;
-                selectionContainerRef.current!.style.cursor = "crosshair";
-              }}
-              index={index + 1}
-              onDelete={() => {
-                deleteSelection(selection.id);
-              }}
-              selection={selection}
-              isOverlapping={
-                isOverlapping.current &&
-                activeSelectionId.current === selection.id
-              }
-            />
-            {renderResizeHandles(selection, selection.id)}
-          </Fragment>
-        ))}
-        {currentSelection && (
+    <SelectionContainer
+      $height={props.containerHeight}
+      ref={selectionContainerRef}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      style={{
+        cursor: "crosshair",
+      }}
+    >
+      {selections.map((selection, index) => (
+        <Fragment key={selection.id}>
           <SelectionArea
-            selection={currentSelection}
-            isOverlapping={isOverlapping.current}
-            disabled
-            iconHidden
+            onMouseOver={() => {
+              isHoveringExistedSelection.current = true;
+              requestAnimationFrame(() => {
+                selectionContainerRef.current!.style.cursor =
+                  isOverlapping.current ? "crosshair" : "grab";
+              });
+            }}
+            onMouseOut={() => {
+              isHoveringExistedSelection.current = false;
+              selectionContainerRef.current!.style.cursor = "crosshair";
+            }}
+            index={index + 1}
+            onDelete={() => {
+              deleteSelection(selection.id);
+            }}
+            selection={selection}
+            isOverlapping={
+              isOverlapping.current &&
+              activeSelectionId.current === selection.id
+            }
           />
-        )}
-      </SelectionContainer>
-    </Wrapper>
+          {renderResizeHandles(selection, selection.id)}
+        </Fragment>
+      ))}
+      {currentSelection && (
+        <SelectionArea
+          selection={currentSelection}
+          isOverlapping={isOverlapping.current}
+          disabled
+          iconHidden
+        />
+      )}
+    </SelectionContainer>
   );
 };
 
-const Wrapper = styled.div`
-  position: relative;
-  user-select: none;
-  max-width: ${MAX_IMAGE_CONTAINER_WIDTH}px;
-  max-height: ${MAX_IMAGE_UPLOAD_PANEL_CONTENT_HEIGHT}px;
-  overflow-y: scroll;
-  border-radius: ${(props) => props.theme.borderRadius.sm};
-`;
-
-const SelectionContainer = styled.div`
+const SelectionContainer = styled.div<{ $height: number }>`
   top: 0;
   width: 100%;
-  height: 100%;
+  height: ${(props) => props.$height}px;
   position: absolute;
-`;
-
-const UploadedImage = styled.img`
-  display: block;
-  width: ${MAX_IMAGE_CONTAINER_WIDTH}px;
-  object-fit: contain;
 `;
 
 export default MarqueeSelection;
