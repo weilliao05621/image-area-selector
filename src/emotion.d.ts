@@ -14,6 +14,10 @@ declare module "@emotion/react" {
       full: string;
     };
     color: {
+      palette: {
+        white: string;
+        black: string;
+      };
       border: {
         0: string;
       };
@@ -32,9 +36,14 @@ declare module "@emotion/react" {
       size: {
         xs: string;
         sm: string;
+        lg: string;
+        xl: string;
       };
       color: {
-        gray: string;
+        gray: {
+          0: string;
+          1: string;
+        };
       };
     };
   }

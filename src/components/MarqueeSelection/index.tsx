@@ -18,7 +18,10 @@ import {
   DEFAULT_SELECTION_COLOR,
   OVERLAPPED_WARNING_COLOR,
 } from "./constants";
-import { MAX_IMAGE_CONTAINER_WIDTH } from "@/constants/layout.constant";
+import {
+  MAX_IMAGE_CONTAINER_WIDTH,
+  MAX_IMAGE_UPLOAD_PANEL_CONTENT_HEIGHT,
+} from "@/constants/layout.constant";
 import SelectionArea from "./SelectionArea";
 
 const START_ID_ORDER = 1 as SelectionId;
@@ -305,7 +308,7 @@ const MarqueeSelection = ({ src, height }: MarqueeSelectionProps) => {
   };
 
   return (
-    <Wrapper $height={`${height}px`}>
+    <Wrapper>
       <UploadedImage src={src} alt="for marquee selections" draggable={false} />
       <SelectionContainer
         ref={selectionContainerRef}
@@ -356,14 +359,17 @@ const MarqueeSelection = ({ src, height }: MarqueeSelectionProps) => {
   );
 };
 
-const Wrapper = styled.div<{ $height: string }>`
+const Wrapper = styled.div`
   position: relative;
   user-select: none;
-  width: ${MAX_IMAGE_CONTAINER_WIDTH}px;
-  height: ${(props) => props.$height};
+  max-width: ${MAX_IMAGE_CONTAINER_WIDTH}px;
+  max-height: ${MAX_IMAGE_UPLOAD_PANEL_CONTENT_HEIGHT}px;
+  overflow-y: scroll;
+  border-radius: ${(props) => props.theme.borderRadius.sm};
 `;
 
 const SelectionContainer = styled.div`
+  top: 0;
   width: 100%;
   height: 100%;
   position: absolute;
@@ -373,7 +379,6 @@ const UploadedImage = styled.img`
   display: block;
   width: ${MAX_IMAGE_CONTAINER_WIDTH}px;
   object-fit: contain;
-  position: absolute;
 `;
 
 export default MarqueeSelection;

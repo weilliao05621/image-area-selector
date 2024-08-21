@@ -1,4 +1,6 @@
 import { useRef, type ReactNode } from "react";
+
+import { FileImageOutlined } from "@ant-design/icons";
 import styled from "@emotion/styled";
 
 // hooks
@@ -45,7 +47,10 @@ function ImageUploader(props: ImageUploaderProps) {
   const actionReminder = props?.actionReminderContent ? (
     props.actionReminderContent
   ) : (
-    <DefaultUploadReminder>Upload Image</DefaultUploadReminder>
+    <DefaultUploadReminder>
+      <StyledFileImageOutlined />
+      <span>Upload Image</span>
+    </DefaultUploadReminder>
   );
 
   return (
@@ -75,6 +80,7 @@ const StyledInput = styled.input`
 const UploadActionBlock = styled.div`
   max-width: ${MAX_IMAGE_CONTAINER_WIDTH}px;
   min-height: ${DEFAULT_IMAGE_CONTAINER_HEIGHT}px;
+  background-color: ${(props) => props.theme.color.palette.white};
 `;
 
 const DefaultUploadReminder = styled.div`
@@ -87,6 +93,12 @@ const DefaultUploadReminder = styled.div`
   user-select: none;
   cursor: pointer;
   border-radius: ${(props) => props.theme.borderRadius.lg};
-  color: ${(props) => props.theme.icon.color.gray};
+  color: ${(props) => props.theme.icon.color.gray["1"]};
   border: 1px solid ${(props) => props.theme.color.border[0]};
+`;
+
+const StyledFileImageOutlined = styled(FileImageOutlined)`
+  font-size: ${(props) => props.theme.icon.size.lg};
+  margin-bottom: 8px;
+  color: inherit;
 `;

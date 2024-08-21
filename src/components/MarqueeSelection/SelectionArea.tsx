@@ -104,11 +104,11 @@ const StyledDeleteOutlined = styled(DeleteOutlined)`
   display: flex;
   align-items: center;
   justify-content: center;
-  color: ${(props) => props.theme.icon.color.gray};
+  color: ${(props) => props.theme.icon.color.gray["1"]};
   width: ${(props) => props.theme.icon.size.sm};
   height: ${(props) => props.theme.icon.size.sm};
   padding: 4px;
-  border: 1px solid ${(props) => props.theme.icon.color.gray};
+  border: 1px solid ${(props) => props.theme.icon.color.gray["1"]};
   border-radius: 2px;
   background-color: white;
   box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
@@ -126,7 +126,7 @@ const IndexCircle = styled.div`
   font-size: 12px;
   border-radius: 50px;
 
-  background-color: ${(props) => props.theme.icon.color.gray}60;
+  background-color: ${(props) => props.theme.icon.color.gray["1"]}60;
 `;
 
 export default SelectionArea;

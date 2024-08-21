@@ -43,8 +43,10 @@ function JsonViewer(props: JsonViewerProps) {
 const Wrapper = styled.div`
   width: ${MAX_VIEWER_WIDTH}px;
   height: ${MAX_VIEWER_HEIGHT}px;
-  background-color: ${(props) => props.theme.color.panel.bg.code};
   margin-left: 136px;
+  padding: 24px 36px;
+  border-radius: ${(props) => props.theme.borderRadius.sm};
+  background-color: ${(props) => props.theme.color.panel.bg.code};
 `;
 
 const StyledPre = styled.pre`
