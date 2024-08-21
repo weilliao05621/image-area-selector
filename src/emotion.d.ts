@@ -9,40 +9,40 @@ import "@emotion/react";
 declare module "@emotion/react" {
   export interface Theme {
     borderRadius: {
-      sm: string;
-      lg: string;
-      full: string;
+      sm: "2px";
+      lg: "8px";
+      full: "100%";
     };
     color: {
       palette: {
-        white: string;
-        black: string;
+        white: "#ffffff";
+        black: "#000000";
       };
       border: {
-        0: string;
+        0: "#dadcde";
       };
       text: {
-        paragraph: string;
+        paragraph: "#bbbdbe";
       };
       panel: {
-        header: string;
+        header: "#ebf0f3";
         bg: {
-          image: string;
-          code: string;
+          image: "#f4f9fa";
+          code: "#2a3948";
         };
       };
     };
     icon: {
       size: {
-        xs: string;
-        sm: string;
-        lg: string;
-        xl: string;
+        xs: "12px";
+        sm: "16px";
+        lg: "24px";
+        xl: "36px";
       };
       color: {
         gray: {
-          0: string;
-          1: string;
+          0: "#d4dade";
+          1: "#c5c5c7";
         };
       };
     };

@@ -8,24 +8,26 @@ const exec = promisify(_exec);
 const themeFilePath = resolve("./src/constants/theme.constant.ts");
 const themeTypeDeclarationPath = resolve("./src/emotion.d.ts");
 
+const REMOVE_REVERSED_WORD_LIST = [
+  ["export const THEME =", ""], // script start
+  ["as const;", ""], // script end
+  [/,/g, ";"], // ts interface splitter
+] as const;
+
 async function generateThemeTyping() {
   const file = await readFile(`${themeFilePath}`, { encoding: "utf-8" });
-  const content = replaceJsonStrings(file.replace("export const THEME = ", ""));
-  const template = generateTemplate(content);
+
+  const template = generateTemplate(
+    REMOVE_REVERSED_WORD_LIST.reduce((acc, cur) => {
+      const replacing = cur[0];
+      const replacer = cur[1];
+      return acc.replace(replacing, replacer);
+    }, file),
+  );
 
   await writeFile(themeTypeDeclarationPath, template);
   await exec(`npx prettier ${themeTypeDeclarationPath} -w`);
-  console.log("Write theme typing: \n", template);
-}
-
-function replaceJsonStrings(jsonLikeStr: string): string {
-  const regexWithComma = /: ?"[^"]*",/g;
-  const regexWithoutComma = /: ?"[^"]*"/g;
-  const replaceTemplate = ": string;";
-
-  return jsonLikeStr
-    .replace(regexWithComma, replaceTemplate)
-    .replace(regexWithoutComma, replaceTemplate);
+  console.log(`Write theme typing to ${themeTypeDeclarationPath}`);
 }
 
 function generateTemplate(content: string) {
