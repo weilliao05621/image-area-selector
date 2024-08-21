@@ -7,4 +7,5 @@ export enum DIRECTION {
   BOTTOM_LEFT = "bottom-left",
   BOTTOM_RIGHT = "bottom-right",
   BOTTOM = "bottom",
+  NONE = "none",
 }

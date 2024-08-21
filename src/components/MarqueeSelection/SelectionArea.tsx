@@ -1,15 +1,16 @@
-import { type MouseEvent } from "react";
+import { useState, type MouseEvent } from "react";
 
 import { useTheme } from "@emotion/react";
 import styled from "@emotion/styled";
+import { DeleteOutlined } from "@ant-design/icons";
 
 // utils
 import { getSelectedAreaDimension } from "@/utils/selection.utils";
 import { getBoundary } from "./utils";
 
 // types
-import { Selection } from "@/types/selection.type";
-import { DeleteOutlined } from "@ant-design/icons";
+import type { Selection, SelectionId } from "@/types/selection.type";
+import { DIRECTION } from "./types";
 
 // constants
 import { DEFAULT_SELECTION_COLOR, OVERLAPPED_WARNING_COLOR } from "./constants";
@@ -20,6 +21,12 @@ const EXTRA_SPACE_FOR_ICON = 8;
 function SelectionArea(props: {
   selection: Selection;
   isOverlapping: boolean;
+  onMouseDown?: (
+    e: MouseEvent<HTMLDivElement>,
+    id?: SelectionId,
+    direction?: DIRECTION,
+    cursor?: string,
+  ) => void;
   onMouseOver?: (e: MouseEvent) => void;
   onMouseOut?: (e: MouseEvent) => void;
   onDelete?: () => void;
@@ -69,9 +76,20 @@ function SelectionArea(props: {
           boxSizing: "border-box", // TODO: use global style
         }}
       />
+      <DragDetect
+        onMouseDown={(e) => {
+          if (!props.onMouseDown) return;
+          props.onMouseDown(e, props.selection.id, DIRECTION.NONE, "grab");
+        }}
+        style={{
+          top: top + EXTRA_SPACE_FOR_ICON,
+          left: left + EXTRA_SPACE_FOR_ICON,
+          width: width - EXTRA_SPACE_FOR_ICON * 2,
+          height: height - EXTRA_SPACE_FOR_ICON * 2,
+        }}
+      />
       {!props.iconHidden && (
         <>
-          {" "}
           <IndexCircle
             style={{
               top: shouldPutIndexOutside ? top : top + ICON_MARGIN,
@@ -99,8 +117,34 @@ function SelectionArea(props: {
   );
 }
 
-const StyledDeleteOutlined = styled(DeleteOutlined)`
+const DragDetect = (props: {
+  style: { [key: string]: string | number };
+  onMouseDown?: (e: MouseEvent<HTMLDivElement>) => void;
+}) => {
+  const [isHover, setIsHover] = useState<boolean>(false);
+  return (
+    <DragDetectWrapper
+      style={{ cursor: isHover ? "grab" : "inherit", ...props.style }}
+      onMouseDown={(e) => {
+        if (!props.onMouseDown) return;
+        props.onMouseDown(e);
+      }}
+      onMouseEnter={() => {
+        setIsHover(true);
+      }}
+      onMouseLeave={() => {
+        setIsHover(false);
+      }}
+    />
+  );
+};
+
+const DragDetectWrapper = styled.div`
   position: absolute;
+`;
+
+const StyledDeleteOutlined = styled(DeleteOutlined)`
+  position: sticky;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -115,7 +159,7 @@ const StyledDeleteOutlined = styled(DeleteOutlined)`
 `;
 
 const IndexCircle = styled.div`
-  position: absolute;
+  position: sticky;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -124,7 +168,7 @@ const IndexCircle = styled.div`
   height: ${(props) => props.theme.icon.size.sm};
   padding: 2px;
   font-size: 12px;
-  border-radius: 50px;
+  border-radius: ${(props) => props.theme.borderRadius.full};
 
   background-color: ${(props) => props.theme.icon.color.gray["1"]}60;
 `;

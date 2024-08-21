@@ -26,8 +26,8 @@ const EXTRA_RESIZE_INTERACTION_SPACE = CORNER_SQUARE_SIZE * 1.5;
 
 interface MarqueeSelectionProps {
   containerHeight: number;
-  constrainX: (x: number) => number;
-  constrainY: (y: number) => number;
+  constrainX: (x: number) => [number, boolean];
+  constrainY: (y: number) => [number, boolean];
 }
 
 /**
@@ -53,8 +53,6 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
   // for handler
   /** @description make mouseover early return if not ready for recording selection coordinate */
   const shouldMousemoveActivate = useRef<boolean>(false);
-  /** @description prevent creating new selection if hovering existed one */
-  const isHoveringExistedSelection = useRef<boolean>(false);
 
   /** @description record id for selections */
   const currentId = useRef<SelectionId>(START_ID_ORDER);
@@ -68,6 +66,10 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
   /** @description for checking overlap after the selection edited */
   const postEditSelection = useRef<Selection | null>(null);
 
+  const dragStart = useRef<Omit<Selection, "id" | "endX" | "endY"> | null>(
+    null,
+  );
+
   // HANDLERS
   const handleMouseDown = (
     e: MouseEvent<HTMLDivElement>,
@@ -75,9 +77,8 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
     direction?: DIRECTION,
     cursor?: string,
   ) => {
-    if (e.target !== e.currentTarget) return;
     shouldMousemoveActivate.current = true;
-
+    if (e.target !== e.currentTarget) return;
     const rect = selectionContainerRef.current?.getBoundingClientRect();
     const left = rect?.left ?? 0;
     const top = rect?.top ?? 0;
@@ -93,11 +94,6 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
       return;
     }
 
-    // avoid drawing on existed selection
-    if (isOverlappingExistingSelection(startX, startY)) return;
-
-    // avoid creating new selection when user is trying to editing exist one
-    if (isHoveringExistedSelection.current) return;
     setCurrentSelection({
       startX,
       startY,
@@ -109,14 +105,13 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
 
   const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
     if (!shouldMousemoveActivate.current) return;
-    if (!selectionContainerRef.current) return;
-
-    const { left, top } = selectionContainerBoundingClientRect.current!;
+    if (!selectionContainerBoundingClientRect.current) return;
+    const { left, top } = selectionContainerBoundingClientRect.current;
 
     // mousedown has constrain drawing on image outside or exist selections
     // so mousemove should constrain  drawing on image outside as well
-    const endX = props.constrainX(e.clientX - left);
-    const endY = props.constrainY(e.clientY - top);
+    const [endX] = props.constrainX(e.clientX - left);
+    const [endY] = props.constrainY(e.clientY - top);
 
     let selectionForOverlappingFeedback = null;
 
@@ -128,8 +123,7 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
       };
       selectionForOverlappingFeedback = updateSelection;
       setCurrentSelection(updateSelection);
-    } else {
-      if (!activeSelectionId.current || !resizeDirection.current) return;
+    } else if (activeSelectionId.current && resizeDirection.current) {
       const updatedSelections = selections.map((item) => ({ ...item }));
       const updatedSelection = updatedSelections.find(
         (s) => s.id === activeSelectionId.current,
@@ -154,6 +148,52 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
         updatedSelection.startY = endY;
       }
 
+      if (resizeDirection.current === DIRECTION.NONE) {
+        if (!dragStart.current) {
+          dragStart.current = {
+            startX: endX,
+            startY: endY,
+          };
+          return;
+        }
+
+        const movementX = endX - dragStart.current.startX;
+        const movementY = endY - dragStart.current.startY;
+
+        const [startXMovement, isStartXInLimit] = props.constrainX(
+          updatedSelection.startX + movementX,
+        );
+        const [endXMovement, isEndXInLimit] = props.constrainX(
+          updatedSelection.endX + movementX,
+        );
+        const [startYMovement, isStartYInLimit] = props.constrainY(
+          updatedSelection.startY + movementY,
+        );
+        const [endYMovement, isEndYInLimit] = props.constrainY(
+          updatedSelection.endY + movementY,
+        );
+
+        const isXInLimit = isStartXInLimit && isEndXInLimit;
+        const isYInLimit = isStartYInLimit && isEndYInLimit;
+
+        if (isXInLimit) {
+          updatedSelection.startX = startXMovement;
+          updatedSelection.endX = endXMovement;
+        }
+
+        if (isYInLimit) {
+          updatedSelection.startY = startYMovement;
+          updatedSelection.endY = endYMovement;
+        }
+
+        dragStart.current = {
+          startX: endX,
+          startY: endY,
+        };
+      } else {
+        return;
+      }
+
       selectionForOverlappingFeedback = updatedSelection;
       postEditSelection.current = updatedSelection;
       updateSelection(postEditSelection.current);
@@ -164,6 +204,7 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
       isSelectionOverlapping(selectionForOverlappingFeedback)
     );
   };
+
   const handleMouseUp = () => {
     if (
       preEditSelection.current &&
@@ -179,21 +220,17 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
 
     setCurrentSelection(null);
     setActiveCursor(null);
+    preEditSelection.current = null;
+    postEditSelection.current = null;
     shouldMousemoveActivate.current = false;
     isOverlapping.current = false;
     activeSelectionId.current = null;
     resizeDirection.current = null;
+    dragStart.current = null;
     currentId.current++;
   };
 
   // UTILS
-  const isOverlappingExistingSelection = (x: number, y: number): boolean => {
-    return selections.some((selection) => {
-      const { startX, startY, endX, endY } = selection;
-      return x >= startX && x <= endX && y >= startY && y <= endY;
-    });
-  };
-
   const isSelectionOverlapping = (newSelection: Selection): boolean => {
     const { startX, startY, endX, endY, id } = newSelection;
     const newSelStartX = getBoundary(startX, endX, "min");
@@ -220,6 +257,7 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
   // RENDER
   const renderResizeHandles = (selection: Selection, id: SelectionId) => {
     const cornerCursors = getCornerCursors(selection);
+    // make sure all handlers are binding to certain direction
     const positions = [
       {
         cursor: cornerCursors[0],
@@ -333,6 +371,7 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp} // force to end when leave container
       style={{
         cursor: activeCursor ?? "crosshair",
       }}
@@ -340,13 +379,8 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
       {selections.map((selection, index) => (
         <Fragment key={selection.id}>
           <SelectionArea
-            onMouseOver={() => {
-              isHoveringExistedSelection.current = true;
-            }}
-            onMouseOut={() => {
-              isHoveringExistedSelection.current = false;
-            }}
             index={index + 1}
+            onMouseDown={handleMouseDown}
             onDelete={() => {
               deleteSelection(selection.id);
             }}
