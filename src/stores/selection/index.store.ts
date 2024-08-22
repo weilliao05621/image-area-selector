@@ -11,12 +11,10 @@ interface Store {
   imageAspectRadio: number;
   selections: Array<Selection>;
   setImageAspectRatio: (ratio: number) => void;
-  getSelections: () => Array<Selection>;
   setSelection: (selection: Selection) => void;
   updateSelection: (selection: Selection) => void;
   deleteSelection: (id: SelectionId) => void;
-  getImageAspectRatio: () => number;
-  getPreviewDataList: () => Array<PreviewData>;
+  getPreviewData: (selection: Omit<Selection, "id">) => PreviewData;
 }
 
 const useSelectionStore = create<Store>((set, get) => ({
@@ -29,8 +27,6 @@ const useSelectionStore = create<Store>((set, get) => ({
       imageAspectRadio: ratio,
     }));
   },
-
-  getSelections: () => get().selections,
   setSelection: (selection) => {
     set((state) => ({
       ...state,
@@ -56,13 +52,9 @@ const useSelectionStore = create<Store>((set, get) => ({
     }));
   },
 
-  getImageAspectRatio: () => get().imageAspectRadio,
-
-  // convert selections for display
-  getPreviewDataList: () =>
-    get().selections.map((selection) =>
-      generatePreviewData(selection, get().imageAspectRadio),
-    ),
+  // convert selection for display
+  getPreviewData: (selection) =>
+    generatePreviewData(selection, get().imageAspectRadio),
 }));
 
 export default useSelectionStore;
