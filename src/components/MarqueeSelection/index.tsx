@@ -21,7 +21,6 @@ import {
 import SelectionArea from "./SelectionArea";
 import { MAX_IMAGE_CONTAINER_WIDTH } from "@/constants/layout.constant";
 
-const START_ID_ORDER = 1 as SelectionId;
 const CORNER_SQUARE_SIZE = 6;
 const EXTRA_RESIZE_INTERACTION_SPACE = CORNER_SQUARE_SIZE * 1.5;
 
@@ -54,9 +53,6 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
   // for handler
   /** @description make mouseover early return if not ready for recording selection coordinate */
   const shouldMousemoveActivate = useRef<boolean>(false);
-
-  /** @description record id for selections */
-  const currentId = useRef<SelectionId>(START_ID_ORDER);
 
   // for interaction
   const isOverlapping = useRef<boolean>(false);
@@ -100,7 +96,7 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
       startY,
       endX: startX,
       endY: startY,
-      id: currentId.current,
+      id: crypto.randomUUID() as SelectionId,
     });
   };
 
@@ -225,7 +221,6 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
     activeSelectionId.current = null;
     resizeDirection.current = null;
     dragStart.current = null;
-    currentId.current++;
   };
 
   // UTILS
