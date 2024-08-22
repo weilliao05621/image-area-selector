@@ -7,20 +7,14 @@ import useSelectionStore from "@/stores/selection/index.store";
 
 // hooks
 import { useCreateSelection, useUpdateSelection } from "./hooks";
-
-// utils
-import { getCornerCursors } from "./utils";
+import { useCursor } from "./hooks/cursor";
 
 // types
 import { type Selection, type SelectionId } from "@/types/selection.type";
 import { DIRECTION } from "./types";
 
 // constants
-import {
-  DEFAULT_RESIZE_CURSORS,
-  DEFAULT_SELECTION_COLOR,
-  OVERLAPPED_WARNING_COLOR,
-} from "./constants";
+import { DEFAULT_SELECTION_COLOR, OVERLAPPED_WARNING_COLOR } from "./constants";
 import SelectionArea from "./SelectionArea";
 import { MAX_IMAGE_CONTAINER_WIDTH } from "@/constants/layout.constant";
 
@@ -84,13 +78,20 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
     updateSelection,
   );
 
+  const {
+    setDragElementCursor,
+    setResizeElementCursor,
+    getPanelCursor,
+    getDragElementCursor,
+    getResizeElementCursor,
+    resetActiveCursor,
+  } = useCursor(() => updatingStatus.activeSelectionId);
+
   // RENDER
   const renderResizeHandles = (selection: Selection, id: SelectionId) => {
-    const cornerCursors = getCornerCursors(selection);
     // make sure all handlers are binding to certain direction
     const positions = [
       {
-        cursor: cornerCursors[0],
         top: selection.startY - CORNER_SQUARE_SIZE / 2,
         left: selection.startX - CORNER_SQUARE_SIZE / 2,
         direction: DIRECTION.TOP_LEFT,
@@ -98,7 +99,6 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
         height: EXTRA_RESIZE_INTERACTION_SPACE,
       },
       {
-        cursor: cornerCursors[1],
         top: selection.startY - CORNER_SQUARE_SIZE / 2,
         left: selection.endX - CORNER_SQUARE_SIZE / 2,
         direction: DIRECTION.TOP_RIGHT,
@@ -106,7 +106,6 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
         height: EXTRA_RESIZE_INTERACTION_SPACE,
       },
       {
-        cursor: cornerCursors[1],
         top: selection.endY - CORNER_SQUARE_SIZE / 2,
         left: selection.startX - CORNER_SQUARE_SIZE / 2,
         direction: DIRECTION.BOTTOM_LEFT,
@@ -115,7 +114,6 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
         height: EXTRA_RESIZE_INTERACTION_SPACE,
       },
       {
-        cursor: cornerCursors[0],
         top: selection.endY - CORNER_SQUARE_SIZE / 2,
         left: selection.endX - CORNER_SQUARE_SIZE / 2,
         direction: DIRECTION.BOTTOM_RIGHT,
@@ -124,7 +122,6 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
         height: EXTRA_RESIZE_INTERACTION_SPACE,
       },
       {
-        cursor: DEFAULT_RESIZE_CURSORS[0],
         top: selection.startY - CORNER_SQUARE_SIZE / 2,
         left: (selection.startX + selection.endX) / 2 - CORNER_SQUARE_SIZE / 2,
         direction: DIRECTION.TOP,
@@ -135,7 +132,6 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
         height: EXTRA_RESIZE_INTERACTION_SPACE,
       },
       {
-        cursor: DEFAULT_RESIZE_CURSORS[1],
         top: (selection.startY + selection.endY) / 2 - CORNER_SQUARE_SIZE / 2,
         left: selection.endX - CORNER_SQUARE_SIZE / 2,
         direction: DIRECTION.RIGHT,
@@ -146,7 +142,6 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
           EXTRA_RESIZE_INTERACTION_SPACE * 2,
       },
       {
-        cursor: DEFAULT_RESIZE_CURSORS[0],
         top: selection.endY - CORNER_SQUARE_SIZE / 2,
         left: (selection.startX + selection.endX) / 2 - CORNER_SQUARE_SIZE / 2,
         direction: DIRECTION.BOTTOM,
@@ -157,7 +152,6 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
         height: EXTRA_RESIZE_INTERACTION_SPACE,
       },
       {
-        cursor: DEFAULT_RESIZE_CURSORS[1],
         top: (selection.startY + selection.endY) / 2 - CORNER_SQUARE_SIZE / 2,
         left: selection.startX - CORNER_SQUARE_SIZE / 2,
         direction: DIRECTION.LEFT,
@@ -174,34 +168,37 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
       updatingStatus.isUpdatingSelectionOverlapping
         ? OVERLAPPED_WARNING_COLOR
         : DEFAULT_SELECTION_COLOR;
+    const getCursorByDirection = getResizeElementCursor(selection);
 
-    return positions.map((pos, index) => (
-      <ResizeSquare
-        key={`${id}-${index}`}
-        // for pesudo element to expand interaction range
-        $direction={pos.direction}
-        $height={pos.height}
-        $width={pos.width}
-        $cursor={
-          updatingStatus.activeSelectionId === id ? pos.cursor : "inherit"
-        }
-        onMouseDown={(e) => {
-          onStartUpdatingSelection(e, {
-            id,
-            direction: pos.direction,
-            cursor: pos.cursor,
-          });
-        }}
-        style={{
-          position: "absolute",
-          width: CORNER_SQUARE_SIZE,
-          height: CORNER_SQUARE_SIZE,
-          backgroundColor: bgColor,
-          top: pos.top,
-          left: pos.left,
-        }}
-      />
-    ));
+    return positions.map((pos, index) => {
+      const cursor = getCursorByDirection(pos.direction);
+      return (
+        <ResizeSquare
+          key={`${id}-${index}`}
+          // for pesudo element to expand interaction range
+          $direction={pos.direction}
+          $height={pos.height}
+          $width={pos.width}
+          $cursor={cursor}
+          onMouseDown={(e) => {
+            setResizeElementCursor(id, cursor);
+            onStartUpdatingSelection(e, {
+              id,
+              direction: pos.direction,
+              cursor,
+            });
+          }}
+          style={{
+            position: "absolute",
+            width: CORNER_SQUARE_SIZE,
+            height: CORNER_SQUARE_SIZE,
+            backgroundColor: bgColor,
+            top: pos.top,
+            left: pos.left,
+          }}
+        />
+      );
+    });
   };
 
   return (
@@ -219,16 +216,19 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
         // all have early return. will auto detect which one to use
         onEndCreatingSelection();
         onEndUpdatingSelection();
+        resetActiveCursor();
       }}
       style={{
-        cursor: updatingStatus.activeCursor ?? "crosshair",
+        cursor: getPanelCursor(),
       }}
     >
       {selections.map((selection, index) => (
         <Fragment key={selection.id}>
           <SelectionArea
             selection={selection}
+            getGrabDetectorCursor={getDragElementCursor}
             onMouseDown={(e) => {
+              setDragElementCursor();
               onStartUpdatingSelection(e, {
                 id: selection.id,
                 direction: DIRECTION.NONE,
@@ -240,7 +240,6 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
             }}
             // display purpose
             index={index + 1}
-            activeCursor={updatingStatus.activeCursor}
             disabled={!!updatingStatus.activeCursor}
             isOverlapping={
               updatingStatus.isUpdatingSelectionOverlapping &&
@@ -256,7 +255,6 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
           isOverlapping={creatingStatus.isCreatingSelectionOverlapping}
           disabled
           iconHidden
-          activeCursor="crosshair"
         />
       )}
     </SelectionContainer>

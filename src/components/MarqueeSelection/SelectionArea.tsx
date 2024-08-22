@@ -28,7 +28,7 @@ function SelectionArea(props: {
   disabled?: boolean;
   iconHidden?: boolean;
   index?: number;
-  activeCursor: string | null;
+  getGrabDetectorCursor?: (isHover: boolean) => string;
 }) {
   const theme = useTheme();
   const iconSize = parseInt(theme.icon.size.sm);
@@ -75,7 +75,7 @@ function SelectionArea(props: {
           if (!props.onMouseDown) return;
           props.onMouseDown(e);
         }}
-        activeCursor={props.activeCursor}
+        getGrabDetectorCursor={props.getGrabDetectorCursor}
         style={{
           top: top + EXTRA_SPACE_FOR_ICON,
           left: left + EXTRA_SPACE_FOR_ICON,
@@ -114,7 +114,7 @@ function SelectionArea(props: {
 
 const DragDetector = (props: {
   style: { [key: string]: string | number };
-  activeCursor: string | null;
+  getGrabDetectorCursor?: (isHover: boolean) => string;
   onMouseDown?: (e: MouseEvent<HTMLDivElement>) => void;
 }) => {
   const [isHover, setIsHover] = useState<boolean>(false);
@@ -122,11 +122,9 @@ const DragDetector = (props: {
   return (
     <DragDetectWrapper
       style={{
-        cursor: props.activeCursor
-          ? props.activeCursor
-          : isHover
-            ? "grab"
-            : "inherit",
+        cursor: props?.getGrabDetectorCursor
+          ? props?.getGrabDetectorCursor(isHover)
+          : "inherit",
         ...props.style,
       }}
       onMouseDown={(e) => {
