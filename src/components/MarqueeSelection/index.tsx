@@ -175,17 +175,11 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
       return (
         <ResizeSquare
           key={`${id}-${index}`}
-          // for pesudo element to expand interaction range
-          $direction={pos.direction}
-          $height={pos.height}
-          $width={pos.width}
-          $cursor={cursor}
           onMouseDown={(e) => {
             setResizeElementCursor(id, cursor);
             onStartUpdatingSelection(e, {
               id,
               direction: pos.direction,
-              cursor,
             });
           }}
           style={{
@@ -196,6 +190,11 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
             top: pos.top,
             left: pos.left,
           }}
+          // for pesudo element to expand interaction range
+          $direction={pos.direction}
+          $height={pos.height}
+          $width={pos.width}
+          $cursor={cursor}
         />
       );
     });
@@ -213,10 +212,10 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
         onUpdatingSelectionByDrag(e);
       }}
       onMouseUp={() => {
+        resetActiveCursor();
         // all have early return. will auto detect which one to use
         onEndCreatingSelection();
         onEndUpdatingSelection();
-        resetActiveCursor();
       }}
       style={{
         cursor: getPanelCursor(),
@@ -226,22 +225,25 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
         <Fragment key={selection.id}>
           <SelectionArea
             selection={selection}
-            getGrabDetectorCursor={getDragElementCursor}
             onMouseDown={(e) => {
               setDragElementCursor();
               onStartUpdatingSelection(e, {
                 id: selection.id,
                 direction: DIRECTION.NONE,
-                cursor: "grabbing",
               });
             }}
             onDelete={() => {
               deleteSelection(selection.id);
             }}
+            disabled={
+              updatingStatus.activeSelectionId
+                ? updatingStatus.activeSelectionId !== selection.id
+                : false
+            }
             // display purpose
             index={index + 1}
-            disabled={!!updatingStatus.activeCursor}
-            isOverlapping={
+            getGrabDetectorCursor={getDragElementCursor}
+            isOverlappingOnOthers={
               updatingStatus.isUpdatingSelectionOverlapping &&
               updatingStatus.activeSelectionId === selection.id
             }
@@ -252,9 +254,10 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
       {currentSelection && (
         <SelectionArea
           selection={currentSelection}
-          isOverlapping={creatingStatus.isCreatingSelectionOverlapping}
           disabled
+          // display purpose
           iconHidden
+          isOverlappingOnOthers={creatingStatus.isCreatingSelectionOverlapping}
         />
       )}
     </SelectionContainer>

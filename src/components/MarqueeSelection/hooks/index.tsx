@@ -10,7 +10,6 @@ type SetSelectionFn = (
   updateOptions?: {
     id: SelectionId;
     direction: DIRECTION;
-    cursor: string;
   },
 ) => void;
 
@@ -106,10 +105,7 @@ export const useUpdateSelection = <ContainerElm extends HTMLElement>(
   getContainerElm: GetContainerElmFromRef<ContainerElm>,
   constrainFn: { x: ConstrainFn; y: ConstrainFn },
   updateSelection: (selection: Selection) => void,
-  // onCursorStale: (when:boolean) => [when: boolean, newCursor: string],
 ) => {
-  const [activeCursor, setActiveCursor] = useState<string | null>(null);
-
   const containerBoundingClientRect = useRef<{
     left: number;
     top: number;
@@ -144,11 +140,10 @@ export const useUpdateSelection = <ContainerElm extends HTMLElement>(
     containerBoundingClientRect.current = { ...rect };
     dragStart.current = { startX, startY };
 
-    const { id, direction, cursor } = updateOptions;
+    const { id, direction } = updateOptions;
 
     resizeDirection.current = direction;
     activeSelectionId.current = id;
-    setActiveCursor(cursor);
   };
 
   const onUpdatingSelectionByResize = (e: MouseEvent<HTMLElement>) => {
@@ -266,7 +261,6 @@ export const useUpdateSelection = <ContainerElm extends HTMLElement>(
       updateSelection(preEditSelection.current);
     }
 
-    setActiveCursor(null);
     preEditSelection.current = null;
     postEditSelection.current = null;
     isActivateSelecting.current = false;
@@ -278,7 +272,6 @@ export const useUpdateSelection = <ContainerElm extends HTMLElement>(
 
   return {
     status: {
-      activeCursor,
       isUpdatingSelectionOverlapping: isOverlapping.current,
       activeSelectionId: activeSelectionId.current,
     },

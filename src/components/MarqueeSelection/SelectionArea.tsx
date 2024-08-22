@@ -19,7 +19,7 @@ const EXTRA_SPACE_FOR_ICON = 8;
 
 function SelectionArea(props: {
   selection: Selection;
-  isOverlapping: boolean;
+  isOverlappingOnOthers: boolean;
   onMouseDown?: (e: MouseEvent) => void;
   onMouseOver?: (e: MouseEvent) => void;
   onMouseOut?: (e: MouseEvent) => void;
@@ -60,7 +60,7 @@ function SelectionArea(props: {
         style={{
           position: "absolute",
           border: `1px solid ${
-            props.isOverlapping
+            props.isOverlappingOnOthers
               ? OVERLAPPED_WARNING_COLOR
               : DEFAULT_SELECTION_COLOR
           }`,
@@ -70,19 +70,21 @@ function SelectionArea(props: {
           height,
         }}
       />
-      <DragDetector
-        onMouseDown={(e) => {
-          if (!props.onMouseDown) return;
-          props.onMouseDown(e);
-        }}
-        getGrabDetectorCursor={props.getGrabDetectorCursor}
-        style={{
-          top: top + EXTRA_SPACE_FOR_ICON,
-          left: left + EXTRA_SPACE_FOR_ICON,
-          width: width - EXTRA_SPACE_FOR_ICON * 2,
-          height: height - EXTRA_SPACE_FOR_ICON * 2,
-        }}
-      />
+      {!props?.disabled && (
+        <DragDetector
+          onMouseDown={(e) => {
+            if (!props.onMouseDown) return;
+            props.onMouseDown(e);
+          }}
+          getGrabDetectorCursor={props.getGrabDetectorCursor}
+          style={{
+            top: top + EXTRA_SPACE_FOR_ICON,
+            left: left + EXTRA_SPACE_FOR_ICON,
+            width: width - EXTRA_SPACE_FOR_ICON * 2,
+            height: height - EXTRA_SPACE_FOR_ICON * 2,
+          }}
+        />
+      )}
       {!props.iconHidden && (
         <>
           <IndexCircle
