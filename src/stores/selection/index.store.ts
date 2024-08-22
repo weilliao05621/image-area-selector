@@ -10,6 +10,7 @@ import type { PreviewData } from "./types";
 interface Store {
   imageAspectRadio: number;
   selections: Array<Selection>;
+  getSelection: (selectionId: SelectionId) => Selection;
   setImageAspectRatio: (ratio: number) => void;
   setSelection: (selection: Selection) => void;
   updateSelection: (selection: Selection) => void;
@@ -27,6 +28,8 @@ const useSelectionStore = create<Store>((set, get) => ({
       imageAspectRadio: ratio,
     }));
   },
+  getSelection: (selectionId) =>
+    get().selections.find((s) => s.id === selectionId)!,
   setSelection: (selection) => {
     set((state) => ({
       ...state,

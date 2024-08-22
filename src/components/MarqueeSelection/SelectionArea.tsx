@@ -1,133 +1,118 @@
-import { useState, type MouseEvent } from "react";
+import { useState, memo, type MouseEvent } from "react";
 
 import { useTheme } from "@emotion/react";
 import styled from "@emotion/styled";
 import { DeleteOutlined } from "@ant-design/icons";
 
-// utils
-import { getSelectedAreaDimension } from "@/utils/selection.utils";
-import { getBoundary } from "./utils";
-
 // types
-import type { Selection } from "@/types/selection.type";
+import type { Selection, SelectionId } from "@/types/selection.type";
 
 // constants
 import { DEFAULT_SELECTION_COLOR, OVERLAPPED_WARNING_COLOR } from "./constants";
+import useSelectionStore from "@/stores/selection/index.store";
 
 const ICON_MARGIN = 8;
 const EXTRA_SPACE_FOR_ICON = 8;
 
-function SelectionArea(props: {
-  selection: Selection;
+export function SelectionArea(props: {
+  id?: Selection["id"];
+  top: number;
+  left: number;
+  width: number;
+  height: number;
   isOverlappingOnOthers: boolean;
-  onMouseDown?: (e: MouseEvent) => void;
-  onMouseOver?: (e: MouseEvent) => void;
-  onMouseOut?: (e: MouseEvent) => void;
-  onDelete?: () => void;
-  /** @description disable all event handlers */
-  disabled?: boolean;
-  iconHidden?: boolean;
-  index?: number;
-  getGrabDetectorCursor?: (isHover: boolean) => string;
 }) {
-  const theme = useTheme();
-  const iconSize = parseInt(theme.icon.size.sm);
-  const top = getBoundary(props.selection.startY, props.selection.endY, "min");
-  const left = getBoundary(props.selection.startX, props.selection.endX, "min");
-  const width = getSelectedAreaDimension(
-    props.selection.startX,
-    props.selection.endX,
-  );
-  const height = getSelectedAreaDimension(
-    props.selection.startY,
-    props.selection.endY,
-  );
-
-  const validIndexSpace = ICON_MARGIN + EXTRA_SPACE_FOR_ICON + iconSize;
-
-  const shouldPutIndexOutside =
-    width <= validIndexSpace || height <= validIndexSpace;
-
   return (
-    <>
-      <div
-        {...(!props.disabled
-          ? {
-              onMouseOver: props.onMouseOver,
-              onMouseOut: props.onMouseOut,
-            }
-          : {})}
-        style={{
-          position: "absolute",
-          border: `1px solid ${
-            props.isOverlappingOnOthers
-              ? OVERLAPPED_WARNING_COLOR
-              : DEFAULT_SELECTION_COLOR
-          }`,
-          top,
-          left,
-          width,
-          height,
-        }}
-      />
-      {!props?.disabled && (
-        <DragDetector
-          onMouseDown={(e) => {
-            if (!props.onMouseDown) return;
-            props.onMouseDown(e);
-          }}
-          getGrabDetectorCursor={props.getGrabDetectorCursor}
-          style={{
-            top: top + EXTRA_SPACE_FOR_ICON,
-            left: left + EXTRA_SPACE_FOR_ICON,
-            width: width - EXTRA_SPACE_FOR_ICON * 2,
-            height: height - EXTRA_SPACE_FOR_ICON * 2,
-          }}
-        />
-      )}
-      {!props.iconHidden && (
-        <>
-          <IndexCircle
-            style={{
-              top: shouldPutIndexOutside ? top : top + ICON_MARGIN,
-              left: shouldPutIndexOutside
-                ? left - ICON_MARGIN - iconSize
-                : left + ICON_MARGIN,
-            }}
-          >
-            <span>{props.index}</span>
-          </IndexCircle>
-          <StyledDeleteOutlined
-            {...(!props.disabled
-              ? {
-                  onClick: props.onDelete,
-                }
-              : {})}
-            style={{
-              top,
-              left: left + width + ICON_MARGIN,
-            }}
-          />
-        </>
-      )}
-    </>
+    <div
+      style={{
+        position: "absolute",
+        border: `1px solid ${
+          props.isOverlappingOnOthers
+            ? OVERLAPPED_WARNING_COLOR
+            : DEFAULT_SELECTION_COLOR
+        }`,
+        top: props.top,
+        left: props.left,
+        width: props.width,
+        height: props.height,
+      }}
+    />
   );
 }
 
-const DragDetector = (props: {
-  style: { [key: string]: string | number };
-  getGrabDetectorCursor?: (isHover: boolean) => string;
+const DeleteSelectionIcon = (props: {
+  top: number;
+  left: number;
+  width: number;
+  id: SelectionId;
+  disabled?: boolean;
+}) => {
+  const deleteSelection = useSelectionStore((state) => state.deleteSelection);
+
+  return (
+    <StyledDeleteOutlined
+      style={{
+        top: props.top,
+        left: props.left + props.width + ICON_MARGIN,
+      }}
+      onClick={() => {
+        if (props.disabled) return;
+        if (!props.id) return;
+        deleteSelection(props.id);
+      }}
+    />
+  );
+};
+
+const IndexDisplayer = (props: {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+  index: number;
+}) => {
+  const theme = useTheme();
+  const iconSize = parseInt(theme.icon.size.sm);
+
+  const validIndexSpace = ICON_MARGIN + EXTRA_SPACE_FOR_ICON + iconSize;
+  const shouldPutIndexOutside =
+    props.width <= validIndexSpace || props.height <= validIndexSpace;
+
+  return (
+    <IndexCircle
+      style={{
+        top: shouldPutIndexOutside ? props.top : props.top + ICON_MARGIN,
+        left: shouldPutIndexOutside
+          ? props.left - ICON_MARGIN - iconSize
+          : props.left + ICON_MARGIN,
+      }}
+    >
+      <span>{props.index}</span>
+    </IndexCircle>
+  );
+};
+
+export const DragDetector = (props: {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+  getDragElementCursor?: (isHover: boolean) => string;
   onMouseDown?: (e: MouseEvent<HTMLDivElement>) => void;
 }) => {
   const [isHover, setIsHover] = useState<boolean>(false);
 
   return (
-    <DragDetectWrapper
+    <div
       style={{
-        cursor: props?.getGrabDetectorCursor
-          ? props?.getGrabDetectorCursor(isHover)
+        position: "absolute",
+        top: props.top + EXTRA_SPACE_FOR_ICON,
+        left: props.left + EXTRA_SPACE_FOR_ICON,
+        width: props.width - EXTRA_SPACE_FOR_ICON * 2,
+        height: props.height - EXTRA_SPACE_FOR_ICON * 2,
+        cursor: props?.getDragElementCursor
+          ? props?.getDragElementCursor(isHover)
           : "inherit",
-        ...props.style,
       }}
       onMouseDown={(e) => {
         if (!props.onMouseDown) return;
@@ -142,10 +127,6 @@ const DragDetector = (props: {
     />
   );
 };
-
-const DragDetectWrapper = styled.div`
-  position: absolute;
-`;
 
 const StyledDeleteOutlined = styled(DeleteOutlined)`
   position: absolute;
@@ -175,4 +156,6 @@ const IndexCircle = styled.div`
   background-color: ${(props) => props.theme.icon.color.gray["1"]}60;
 `;
 
-export default SelectionArea;
+export const MemoSelectionArea = memo(SelectionArea);
+export const MemoDeleteSelectionIcon = memo(DeleteSelectionIcon);
+export const MemoIndexDisplayer = memo(IndexDisplayer);

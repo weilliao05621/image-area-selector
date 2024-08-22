@@ -10,13 +10,21 @@ import { useCreateSelection, useUpdateSelection } from "./hooks";
 import { useCursor } from "./hooks/cursor";
 
 // types
-import { type Selection, type SelectionId } from "@/types/selection.type";
+import { type SelectionId } from "@/types/selection.type";
 import { DIRECTION } from "./types";
 
 // constants
 import { DEFAULT_SELECTION_COLOR, OVERLAPPED_WARNING_COLOR } from "./constants";
-import SelectionArea from "./SelectionArea";
+import {
+  MemoSelectionArea,
+  DragDetector,
+  SelectionArea,
+  MemoDeleteSelectionIcon,
+  MemoIndexDisplayer,
+} from "./SelectionArea";
 import { MAX_IMAGE_CONTAINER_WIDTH } from "@/constants/layout.constant";
+import { getBoundary } from "./utils";
+import { getSelectedAreaDimension } from "@/utils/selection.utils";
 
 const CORNER_SQUARE_SIZE = 6;
 const EXTRA_RESIZE_INTERACTION_SPACE = CORNER_SQUARE_SIZE * 1.5;
@@ -37,7 +45,7 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
   const selections = useSelectionStore((state) => state.selections);
   const setSelection = useSelectionStore((state) => state.setSelection);
   const updateSelection = useSelectionStore((state) => state.updateSelection);
-  const deleteSelection = useSelectionStore((state) => state.deleteSelection);
+  const getSelection = useSelectionStore((state) => state.getSelection);
 
   // ELEMENT REFS
   const selectionContainerRef = useRef<HTMLDivElement>(null);
@@ -88,8 +96,9 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
   } = useCursor(() => updatingStatus.activeSelectionId);
 
   // RENDER
-  const renderResizeHandles = (selection: Selection, id: SelectionId) => {
+  const renderResizeHandles = (id: SelectionId) => {
     // make sure all handlers are binding to certain direction
+    const selection = getSelection(id);
     const positions = [
       {
         top: selection.startY - CORNER_SQUARE_SIZE / 2,
@@ -217,46 +226,90 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
         onEndCreatingSelection();
         onEndUpdatingSelection();
       }}
+      // style={{ cursor: "crosshair" }}
       style={{
         cursor: getPanelCursor(),
       }}
     >
-      {selections.map((selection, index) => (
-        <Fragment key={selection.id}>
-          <SelectionArea
-            selection={selection}
-            onMouseDown={(e) => {
-              setDragElementCursor();
-              onStartUpdatingSelection(e, {
-                id: selection.id,
-                direction: DIRECTION.NONE,
-              });
-            }}
-            onDelete={() => {
-              deleteSelection(selection.id);
-            }}
-            disabled={
-              updatingStatus.activeSelectionId
-                ? updatingStatus.activeSelectionId !== selection.id
-                : false
-            }
-            // display purpose
-            index={index + 1}
-            getGrabDetectorCursor={getDragElementCursor}
-            isOverlappingOnOthers={
-              updatingStatus.isUpdatingSelectionOverlapping &&
-              updatingStatus.activeSelectionId === selection.id
-            }
-          />
-          {renderResizeHandles(selection, selection.id)}
-        </Fragment>
-      ))}
+      {selections.map((selection, index) => {
+        const left = getBoundary(selection.startX, selection.endX, "min");
+        const top = getBoundary(selection.startY, selection.endY, "min");
+        const width = getSelectedAreaDimension(
+          selection.startX,
+          selection.endX,
+        );
+        const height = getSelectedAreaDimension(
+          selection.startY,
+          selection.endY,
+        );
+        return (
+          <Fragment key={selection.id}>
+            <MemoSelectionArea
+              top={top}
+              left={left}
+              width={width}
+              height={height}
+              isOverlappingOnOthers={
+                updatingStatus.isUpdatingSelectionOverlapping &&
+                updatingStatus.activeSelectionId === selection.id
+              }
+            />
+            <MemoDeleteSelectionIcon
+              top={top}
+              left={left}
+              width={width}
+              id={selection.id}
+              disabled={
+                updatingStatus.activeSelectionId
+                  ? updatingStatus.activeSelectionId !== selection.id
+                  : false
+              }
+            />
+            <DragDetector
+              top={top}
+              left={left}
+              width={width}
+              height={height}
+              getDragElementCursor={getDragElementCursor}
+              onMouseDown={(e) => {
+                setDragElementCursor();
+                onStartUpdatingSelection(e, {
+                  id: selection.id,
+                  direction: DIRECTION.NONE,
+                });
+              }}
+            />
+            <MemoIndexDisplayer
+              top={top}
+              left={left}
+              width={width}
+              height={height}
+              index={index + 1}
+            />
+            {renderResizeHandles(selection.id)}
+          </Fragment>
+        );
+      })}
       {currentSelection && (
         <SelectionArea
-          selection={currentSelection}
-          disabled
-          // display purpose
-          iconHidden
+          left={getBoundary(
+            currentSelection.startX,
+            currentSelection.endX,
+            "min",
+          )}
+          top={getBoundary(
+            currentSelection.startY,
+            currentSelection.endY,
+            "min",
+          )}
+          width={getSelectedAreaDimension(
+            currentSelection.startX,
+            currentSelection.endX,
+          )}
+          height={getSelectedAreaDimension(
+            currentSelection.startY,
+            currentSelection.endY,
+          )}
           isOverlappingOnOthers={creatingStatus.isCreatingSelectionOverlapping}
         />
       )}
