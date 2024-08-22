@@ -25,14 +25,7 @@ export const useCursor = (getActiveSelectionId: () => SelectionId | null) => {
 
   const getResizeElementCursor = (selection: Selection) => {
     const cursors = getCornerCursors(selection);
-    return (direction: DIRECTION) => {
-      const activeSelectionId = getActiveSelectionId();
-      return activeSelectionId
-        ? activeSelectionId === selection.id
-          ? cursors[direction]
-          : DEFAULT_CURSOR
-        : cursors[direction];
-    };
+    return (direction: DIRECTION) => cursors[direction];
   };
 
   const getDragElementCursor = (isHover: boolean) =>
