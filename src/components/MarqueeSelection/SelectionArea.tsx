@@ -9,8 +9,7 @@ import { getSelectedAreaDimension } from "@/utils/selection.utils";
 import { getBoundary } from "./utils";
 
 // types
-import type { Selection, SelectionId } from "@/types/selection.type";
-import { DIRECTION } from "./types";
+import type { Selection } from "@/types/selection.type";
 
 // constants
 import { DEFAULT_SELECTION_COLOR, OVERLAPPED_WARNING_COLOR } from "./constants";
@@ -21,12 +20,7 @@ const EXTRA_SPACE_FOR_ICON = 8;
 function SelectionArea(props: {
   selection: Selection;
   isOverlapping: boolean;
-  onMouseDown?: (
-    e: MouseEvent<HTMLDivElement>,
-    id?: SelectionId,
-    direction?: DIRECTION,
-    cursor?: string,
-  ) => void;
+  onMouseDown?: (e: MouseEvent) => void;
   onMouseOver?: (e: MouseEvent) => void;
   onMouseOut?: (e: MouseEvent) => void;
   onDelete?: () => void;
@@ -34,6 +28,7 @@ function SelectionArea(props: {
   disabled?: boolean;
   iconHidden?: boolean;
   index?: number;
+  activeCursor: string | null;
 }) {
   const theme = useTheme();
   const iconSize = parseInt(theme.icon.size.sm);
@@ -75,11 +70,12 @@ function SelectionArea(props: {
           height,
         }}
       />
-      <DragDetect
+      <DragDetector
         onMouseDown={(e) => {
           if (!props.onMouseDown) return;
-          props.onMouseDown(e, props.selection.id, DIRECTION.NONE, "grab");
+          props.onMouseDown(e);
         }}
+        activeCursor={props.activeCursor}
         style={{
           top: top + EXTRA_SPACE_FOR_ICON,
           left: left + EXTRA_SPACE_FOR_ICON,
@@ -116,14 +112,23 @@ function SelectionArea(props: {
   );
 }
 
-const DragDetect = (props: {
+const DragDetector = (props: {
   style: { [key: string]: string | number };
+  activeCursor: string | null;
   onMouseDown?: (e: MouseEvent<HTMLDivElement>) => void;
 }) => {
   const [isHover, setIsHover] = useState<boolean>(false);
+
   return (
     <DragDetectWrapper
-      style={{ cursor: isHover ? "grab" : "inherit", ...props.style }}
+      style={{
+        cursor: props.activeCursor
+          ? props.activeCursor
+          : isHover
+            ? "grab"
+            : "inherit",
+        ...props.style,
+      }}
       onMouseDown={(e) => {
         if (!props.onMouseDown) return;
         props.onMouseDown(e);
