@@ -22,7 +22,10 @@ import {
   MemoDeleteSelectionIcon,
   MemoIndexDisplayer,
 } from "./SelectionArea";
-import { MAX_IMAGE_CONTAINER_WIDTH } from "@/constants/layout.constant";
+import {
+  MAX_IMAGE_CONTAINER_WIDTH,
+  MAX_IMAGE_UPLOAD_PANEL_CONTENT_WIDTH,
+} from "@/constants/layout.constant";
 import { getBoundary } from "./utils";
 import { getSelectedAreaDimension } from "@/utils/selection.utils";
 
@@ -218,6 +221,8 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
 
 const SelectionContainer = styled.div<{ $height: number }>`
   top: 0;
+  left: ${(MAX_IMAGE_UPLOAD_PANEL_CONTENT_WIDTH - MAX_IMAGE_CONTAINER_WIDTH) /
+  2}px;
   width: ${MAX_IMAGE_CONTAINER_WIDTH}px;
   height: ${(props) => props.$height}px;
   position: absolute;

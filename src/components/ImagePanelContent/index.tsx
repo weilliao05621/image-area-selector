@@ -27,7 +27,7 @@ function ImagePanelContent(props: ImagePanelContentProps) {
 const Wrapper = styled.div`
   position: relative;
   user-select: none;
-  max-width: ${MAX_IMAGE_CONTAINER_WIDTH}px;
+  width: 100%;
   max-height: ${MAX_IMAGE_UPLOAD_PANEL_CONTENT_HEIGHT}px;
   overflow-y: scroll;
   border-radius: ${(props) => props.theme.borderRadius.sm};
@@ -37,6 +37,7 @@ const UploadedImage = styled.img`
   display: block;
   width: ${MAX_IMAGE_CONTAINER_WIDTH}px;
   object-fit: contain;
+  margin: 0 auto;
 `;
 
 export default ImagePanelContent;
