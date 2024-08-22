@@ -70,11 +70,10 @@ function ImageUploader(props: ImageUploaderProps) {
 
 export default ImageUploader;
 
-// 0 opacity enable assistive technology interprets to read the input
-// check https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/file#examples
 const StyledInput = styled.input`
   opacity: 0;
   height: 0;
+  width: 0;
 `;
 
 const UploadActionBlock = styled.div`

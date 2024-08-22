@@ -73,7 +73,6 @@ function SelectionArea(props: {
           left,
           width,
           height,
-          boxSizing: "border-box", // TODO: use global style
         }}
       />
       <DragDetect
@@ -144,32 +143,30 @@ const DragDetectWrapper = styled.div`
 `;
 
 const StyledDeleteOutlined = styled(DeleteOutlined)`
-  position: sticky;
+  position: absolute;
   display: flex;
   align-items: center;
   justify-content: center;
   color: ${(props) => props.theme.icon.color.gray["1"]};
-  width: ${(props) => props.theme.icon.size.sm};
-  height: ${(props) => props.theme.icon.size.sm};
-  padding: 4px;
+  width: ${(props) => props.theme.icon.size.lg};
+  height: ${(props) => props.theme.icon.size.lg};
   border: 1px solid ${(props) => props.theme.icon.color.gray["1"]};
-  border-radius: 2px;
-  background-color: white;
+  border-radius: ${(props) => props.theme.borderRadius.sm};
+  background-color: ${(props) => props.theme.color.palette.white};
   box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
 `;
 
 const IndexCircle = styled.div`
-  position: sticky;
+  position: absolute;
   display: flex;
   justify-content: center;
   align-items: center;
-  color: black;
+  color: ${(props) => props.theme.color.palette.black};
   width: ${(props) => props.theme.icon.size.sm};
   height: ${(props) => props.theme.icon.size.sm};
   padding: 2px;
   font-size: 12px;
   border-radius: ${(props) => props.theme.borderRadius.full};
-
   background-color: ${(props) => props.theme.icon.color.gray["1"]}60;
 `;
 

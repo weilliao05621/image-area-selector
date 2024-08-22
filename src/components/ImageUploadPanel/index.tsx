@@ -7,6 +7,7 @@ import {
   IMAGE_UPLOAD_PANEL_HEADER_HEIGHT,
   MAX_IMAGE_UPLOAD_PANEL_HEIGHT,
   MAX_IMAGE_UPLOAD_PANEL_CONTENT_WIDTH,
+  IMAGE_UPLOAD_PANEL_CONTENT_PADDING_Y,
 } from "@/constants/layout.constant";
 
 interface ImageUploadPanelProps {
@@ -57,7 +58,12 @@ const AvatarWrapper = styled.div`
 `;
 
 const ContentWrapper = styled.div`
-  padding: 80px 48px;
+  position: relative;
+  width: ${MAX_IMAGE_UPLOAD_PANEL_CONTENT_WIDTH}px;
+  padding: ${IMAGE_UPLOAD_PANEL_CONTENT_PADDING_Y}px 0px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 `;
 
 const MemoImageUploadPanel = memo(ImageUploadPanel);

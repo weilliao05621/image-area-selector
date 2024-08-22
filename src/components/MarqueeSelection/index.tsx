@@ -19,6 +19,7 @@ import {
   OVERLAPPED_WARNING_COLOR,
 } from "./constants";
 import SelectionArea from "./SelectionArea";
+import { MAX_IMAGE_CONTAINER_WIDTH } from "@/constants/layout.constant";
 
 const START_ID_ORDER = 1 as SelectionId;
 const CORNER_SQUARE_SIZE = 6;
@@ -190,10 +191,7 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
           startX: endX,
           startY: endY,
         };
-      } else {
-        return;
       }
-
       selectionForOverlappingFeedback = updatedSelection;
       postEditSelection.current = updatedSelection;
       updateSelection(postEditSelection.current);
@@ -408,7 +406,7 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
 
 const SelectionContainer = styled.div<{ $height: number }>`
   top: 0;
-  width: 100%;
+  width: ${MAX_IMAGE_CONTAINER_WIDTH}px;
   height: ${(props) => props.$height}px;
   position: absolute;
 `;
