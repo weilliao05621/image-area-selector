@@ -1,9 +1,7 @@
 {
   "version": "0.2",
   "enableGlobDot": true,
-  "files": [
-    "**"
-  ],
+  "files": ["**"],
   "ignorePaths": [
     "/.git",
     "/.gitignore",
@@ -12,16 +10,7 @@
   ],
   "useGitignore": true,
   "allowCompoundWords": true,
-  "enableFiletypes": [
-    "*"
-  ],
-  "includeRegExpList": [
-    "[ -ɏ]"
-  ],
-  "words": [
-    "nesw",
-    "nofilter",
-    "nvmrc",
-    "zustand"
-  ]
+  "enableFiletypes": ["*"],
+  "includeRegExpList": ["[ -ɏ]"],
+  "words": ["nesw", "nofilter", "nvmrc", "zustand", "resizer"]
 }

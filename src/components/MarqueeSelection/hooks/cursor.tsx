@@ -1,50 +1,72 @@
-import { useState } from "react";
+import { useRef, useState, type MouseEvent } from "react";
+
+// constants
+import {
+  ACTIVE_CURSOR_DATA_ATTR,
+  ACTIVE_SELECTION_ID_ATTR,
+} from "../constants";
 
 // types
 import { Selection, SelectionId } from "@/types/selection.type";
 import { DIRECTION } from "../types";
 
-const DEFAULT_RESIZE_CURSORS = ["row-resize", "col-resize"] as const;
-const DEFAULT_RESIZE_CORNER_CURSORS = ["nwse-resize", "nesw-resize"] as const;
+export const DEFAULT_RESIZE_CURSORS = ["row-resize", "col-resize"] as const;
+export const DEFAULT_RESIZE_CORNER_CURSORS = [
+  "nwse-resize",
+  "nesw-resize",
+] as const;
 const FLIPPED_RESIZE_CORNER_CURSORS = ["nesw-resize", "nwse-resize"] as const;
-const DEFAULT_CURSOR = "inherit";
 
+// HOOKS
 export const useCursor = (getActiveSelectionId: () => SelectionId | null) => {
   const [activeCursor, setActiveCursor] = useState<string | null>(null);
+  const recordCursorActive = useRef<boolean>(false);
 
-  const setResizeElementCursor = (id: SelectionId, cursor: string) => {
-    if (getActiveSelectionId() !== id) return;
-    setActiveCursor(cursor);
+  const onTriggerActiveCursor = (e: MouseEvent) => {
+    recordCursorActive.current = true;
+    const activeCursor = (e.target as HTMLElement).getAttribute(
+      ACTIVE_CURSOR_DATA_ATTR,
+    );
+    if (activeCursor) {
+      setActiveCursor(activeCursor);
+    }
   };
 
-  const setDragElementCursor = () => {
-    setActiveCursor("grabbing");
+  const onUpdateResizeCornerCursor = (e: MouseEvent) => {
+    if (!recordCursorActive.current) return;
+    if (!activeCursor) return;
+    const isCorner = checkIsCornerCursor(activeCursor);
+
+    if (!isCorner) return;
+    const selectionId = (e.target as HTMLElement).getAttribute(
+      ACTIVE_SELECTION_ID_ATTR,
+    );
+    const isHoveringActiveSelection = selectionId === getActiveSelectionId();
+    if (!isHoveringActiveSelection) return;
+    const updateActiveCursor = (e.target as HTMLElement).getAttribute(
+      ACTIVE_CURSOR_DATA_ATTR,
+    );
+    if (!updateActiveCursor) return;
+    const willBeCorner = checkIsCornerCursor(updateActiveCursor);
+    if (!willBeCorner) return;
+    setActiveCursor(updateActiveCursor);
   };
 
-  const resetActiveCursor = () => setActiveCursor(null);
-
-  const getResizeElementCursor = (selection: Selection) => {
-    const cursors = getCornerCursors(selection);
-    return (direction: DIRECTION) => cursors[direction];
+  const resetActiveCursor = () => {
+    recordCursorActive.current = false;
+    setActiveCursor(null);
   };
-
-  const getDragElementCursor = (isHover: boolean) =>
-    activeCursor ? activeCursor : isHover ? "grab" : DEFAULT_CURSOR;
-
-  const getPanelCursor = () => activeCursor ?? "crosshair";
 
   return {
-    resetActiveCursor,
-    setDragElementCursor,
-    setResizeElementCursor,
-    getResizeElementCursor,
-    getDragElementCursor,
-    getPanelCursor,
+    activeCursor,
+    onTriggerActiveCursor,
+    onUpdateResizeCornerCursor,
+    resetActiveCursor: resetActiveCursor,
   };
 };
 
 // UTILS
-export function getCornerCursors(selection: Selection) {
+export function getResizerCursors(selection: Selection) {
   const fromTopLeft =
     selection.startX < selection.endX && selection.startY < selection.endY;
   const fromBottonRight =
@@ -56,7 +78,7 @@ export function getCornerCursors(selection: Selection) {
     ? DEFAULT_RESIZE_CORNER_CURSORS
     : FLIPPED_RESIZE_CORNER_CURSORS;
 
-  const cursorsByPosition: { [key in DIRECTION]: string } = {
+  const cursorsByPosition = {
     [DIRECTION.TOP_LEFT]: cursors[0],
     [DIRECTION.BOTTOM_RIGHT]: cursors[0],
     [DIRECTION.TOP_RIGHT]: cursors[1],
@@ -65,8 +87,10 @@ export function getCornerCursors(selection: Selection) {
     [DIRECTION.BOTTOM]: DEFAULT_RESIZE_CURSORS[0],
     [DIRECTION.LEFT]: DEFAULT_RESIZE_CURSORS[1],
     [DIRECTION.RIGHT]: DEFAULT_RESIZE_CURSORS[1],
-    [DIRECTION.NONE]: "inherit",
   } as const;
 
   return cursorsByPosition;
 }
+
+const checkIsCornerCursor = (c: string) =>
+  !!DEFAULT_RESIZE_CORNER_CURSORS.find((_c) => _c === c);

@@ -1,4 +1,4 @@
-import { useState, memo, type MouseEvent } from "react";
+import { memo, type MouseEvent } from "react";
 
 import { useTheme } from "@emotion/react";
 import styled from "@emotion/styled";
@@ -12,7 +12,15 @@ import type { Selection, SelectionId } from "@/types/selection.type";
 import { DIRECTION } from "./types";
 
 // constants
-import { DEFAULT_SELECTION_COLOR, OVERLAPPED_WARNING_COLOR } from "./constants";
+import {
+  DEFAULT_SELECTION_COLOR,
+  DRAG_ACTIVE_CURSOR_ATTRIBUTE,
+  getResizerActiveCursorAttribute,
+  OVERLAPPED_WARNING_COLOR,
+} from "./constants";
+
+// utils
+import { getResizerCursors } from "./hooks/cursor";
 
 const ICON_MARGIN = 8;
 const EXTRA_SPACE_FOR_ICON = 8;
@@ -29,12 +37,7 @@ export function SelectionArea(props: {
   getResizeElementCursor?: (
     selection: Selection,
   ) => (direction: DIRECTION) => string;
-  onMouseDown?: (
-    e: MouseEvent,
-    id: SelectionId,
-    cursor: string,
-    direction: DIRECTION,
-  ) => void;
+  onMouseDown?: (e: MouseEvent, id: SelectionId, direction: DIRECTION) => void;
 }) {
   const getSelection = useSelectionStore((state) => state.getSelection);
 
@@ -60,7 +63,6 @@ export function SelectionArea(props: {
         top: selection.endY - CORNER_SQUARE_SIZE / 2,
         left: selection.startX - CORNER_SQUARE_SIZE / 2,
         direction: DIRECTION.BOTTOM_LEFT,
-        isAlign: true,
         width: EXTRA_RESIZE_INTERACTION_SPACE,
         height: EXTRA_RESIZE_INTERACTION_SPACE,
       },
@@ -68,7 +70,6 @@ export function SelectionArea(props: {
         top: selection.endY - CORNER_SQUARE_SIZE / 2,
         left: selection.endX - CORNER_SQUARE_SIZE / 2,
         direction: DIRECTION.BOTTOM_RIGHT,
-        isAlign: true,
         width: EXTRA_RESIZE_INTERACTION_SPACE,
         height: EXTRA_RESIZE_INTERACTION_SPACE,
       },
@@ -76,7 +77,6 @@ export function SelectionArea(props: {
         top: selection.startY - CORNER_SQUARE_SIZE / 2,
         left: (selection.startX + selection.endX) / 2 - CORNER_SQUARE_SIZE / 2,
         direction: DIRECTION.TOP,
-        isAlign: false,
         width:
           Math.abs(selection.startX - selection.endX) -
           EXTRA_RESIZE_INTERACTION_SPACE * 2,
@@ -86,7 +86,6 @@ export function SelectionArea(props: {
         top: (selection.startY + selection.endY) / 2 - CORNER_SQUARE_SIZE / 2,
         left: selection.endX - CORNER_SQUARE_SIZE / 2,
         direction: DIRECTION.RIGHT,
-        isAlign: false,
         width: EXTRA_RESIZE_INTERACTION_SPACE,
         height:
           Math.abs(selection.startY - selection.endY) -
@@ -96,7 +95,6 @@ export function SelectionArea(props: {
         top: selection.endY - CORNER_SQUARE_SIZE / 2,
         left: (selection.startX + selection.endX) / 2 - CORNER_SQUARE_SIZE / 2,
         direction: DIRECTION.BOTTOM,
-        isAlign: false,
         width:
           Math.abs(selection.startX - selection.endX) -
           EXTRA_RESIZE_INTERACTION_SPACE * 2,
@@ -106,32 +104,30 @@ export function SelectionArea(props: {
         top: (selection.startY + selection.endY) / 2 - CORNER_SQUARE_SIZE / 2,
         left: selection.startX - CORNER_SQUARE_SIZE / 2,
         direction: DIRECTION.LEFT,
-        isAlign: false,
         width: EXTRA_RESIZE_INTERACTION_SPACE,
         height:
           Math.abs(selection.startY - selection.endY) -
           EXTRA_RESIZE_INTERACTION_SPACE * 2,
       },
-    ];
+    ] as const;
 
     const bgColor = props.isOverlappingOnOthers
       ? OVERLAPPED_WARNING_COLOR
       : DEFAULT_SELECTION_COLOR;
 
-    const getCursorByDirection = props.getResizeElementCursor
-      ? props.getResizeElementCursor(selection)
-      : null;
+    const cursors = getResizerCursors(selection);
 
     return positions.map((pos, index) => {
-      const cursor = getCursorByDirection
-        ? getCursorByDirection(pos.direction)
-        : "grabbing";
+      const cursor = cursors[pos.direction];
+      const resizerCursorData = getResizerActiveCursorAttribute(cursor, id);
+
       return (
         <ResizeSquare
           key={`${id}-${index}`}
+          {...resizerCursorData}
           onMouseDown={(e) => {
             if (!props.onMouseDown) return;
-            props.onMouseDown(e, id, cursor, pos.direction);
+            props.onMouseDown(e, id, pos.direction);
           }}
           style={{
             position: "absolute",
@@ -223,41 +219,37 @@ const IndexDisplayer = (props: {
   );
 };
 
+// TODO: 可以 wrap 進去
 export const DragDetector = (props: {
   top: number;
   left: number;
   width: number;
   height: number;
-  getDragElementCursor?: (isHover: boolean) => string;
   onMouseDown?: (e: MouseEvent<HTMLDivElement>) => void;
 }) => {
-  const [isHover, setIsHover] = useState<boolean>(false);
-
   return (
-    <div
+    <StyledDragDetector
+      {...DRAG_ACTIVE_CURSOR_ATTRIBUTE}
       style={{
         position: "absolute",
         top: props.top + EXTRA_SPACE_FOR_ICON,
         left: props.left + EXTRA_SPACE_FOR_ICON,
         width: props.width - EXTRA_SPACE_FOR_ICON * 2,
         height: props.height - EXTRA_SPACE_FOR_ICON * 2,
-        cursor: props?.getDragElementCursor
-          ? props?.getDragElementCursor(isHover)
-          : "inherit",
       }}
       onMouseDown={(e) => {
         if (!props.onMouseDown) return;
         props.onMouseDown(e);
       }}
-      onMouseEnter={() => {
-        setIsHover(true);
-      }}
-      onMouseLeave={() => {
-        setIsHover(false);
-      }}
     />
   );
 };
+
+const StyledDragDetector = styled.div`
+  &:hover {
+    cursor: grab;
+  }
+`;
 
 const StyledDeleteOutlined = styled(DeleteOutlined)`
   position: absolute;
@@ -293,7 +285,12 @@ const ResizeSquare = styled.div<{
   $direction: DIRECTION;
   $cursor: string;
 }>`
-  cursor: ${(props) => props.$cursor};
+  &:hover {
+    cursor: ${(props) => props.$cursor};
+  }
+  &::after:hover {
+    cursor: inherit;
+  }
   &::after {
     content: "";
     display: block;
