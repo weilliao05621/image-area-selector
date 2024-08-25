@@ -1,7 +1,7 @@
 import { useRef, useState, type MouseEvent } from "react";
 
 // utils
-import { getBoundary } from "@/features/image-area-selector/components/ImageSelections/utils";
+import { getBoundary } from "../utils";
 
 // constants
 import { DIRECTION } from "../constants/position";

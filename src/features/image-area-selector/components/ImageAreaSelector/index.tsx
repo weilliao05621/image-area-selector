@@ -3,16 +3,16 @@ import { type ReactNode } from "react";
 import styled from "@emotion/styled";
 
 // stores
-import useSelectionStore from "@/features/image-area-selector/stores/selection/index.store";
+import useSelectionStore from "@/features/image-area-selector/stores/selection";
 
 // components
-import ImageSelections from "@/features/image-area-selector/components/ImageSelections";
+import ImageSelections from "../ImageSelections";
 
 // constants
 import {
   MAX_IMAGE_CONTAINER_WIDTH,
   MAX_IMAGE_UPLOAD_PANEL_CONTENT_HEIGHT,
-} from "@/features/image-area-selector/constants/layout.constant";
+} from "../../constants/layout.constant";
 
 interface ImageAreaSelectorProps {
   children: ReactNode;

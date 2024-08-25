@@ -1,13 +1,13 @@
 import { useState } from "react";
 
 // stores
-import useSelectionStore from "@/features/image-area-selector/stores/selection/index.store";
+import useSelectionStore from "@/features/image-area-selector/stores/selection";
 
 // components
-import ImageUploadPanelLayout from "@/features/image-area-selector/components/ImagePanelLayout";
-import ImageUploader from "@/features/image-area-selector/components/ImageUploader";
-import UploadedImage from "@/features/image-area-selector/components/UploadedImage";
-import ImageAreaSelector from "@/features/image-area-selector/components/ImageAreaSelector";
+import ImageUploadPanelLayout from "../ImagePanelLayout";
+import ImageUploader from "../ImageUploader";
+import UploadedImage from "../UploadedImage";
+import ImageAreaSelector from "../ImageAreaSelector";
 
 // constants
 import { MAX_IMAGE_CONTAINER_WIDTH } from "@/features/image-area-selector/constants/layout.constant";

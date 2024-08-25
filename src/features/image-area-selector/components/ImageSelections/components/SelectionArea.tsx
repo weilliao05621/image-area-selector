@@ -5,7 +5,7 @@ import styled from "@emotion/styled";
 import { DeleteOutlined } from "@ant-design/icons";
 
 // stores
-import useSelectionStore from "@/features/image-area-selector/stores/selection/index.store";
+import useSelectionStore from "@/features/image-area-selector/stores/selection";
 
 // utils
 import { getSelectedAreaDimension } from "@/features/image-area-selector/utils/selection.util";

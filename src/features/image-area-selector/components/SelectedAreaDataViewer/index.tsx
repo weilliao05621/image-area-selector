@@ -3,7 +3,7 @@ import { memo } from "react";
 import styled from "@emotion/styled";
 
 // store
-import useSelectionStore from "@/features/image-area-selector/stores/selection/index.store";
+import useSelectionStore from "@/features/image-area-selector/stores/selection";
 
 // constants
 import {

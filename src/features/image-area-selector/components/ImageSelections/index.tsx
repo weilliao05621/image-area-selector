@@ -4,7 +4,7 @@ import styled from "@emotion/styled";
 import { css, Global } from "@emotion/react";
 
 // stores
-import useSelectionStore from "@/features/image-area-selector/stores/selection/index.store";
+import useSelectionStore from "@/features/image-area-selector/stores/selection";
 
 // components
 import { MemoSelectionArea, SelectionArea } from "./components/SelectionArea";
