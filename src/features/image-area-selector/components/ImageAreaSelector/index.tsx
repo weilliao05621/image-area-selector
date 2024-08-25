@@ -18,16 +18,14 @@ import { useCursor } from "./hooks/cursor";
 // constants
 import { DIRECTION } from "./constants/position";
 import { PANEL_ACTIVE_CURSOR_ATTRIBUTE } from "./constants/cursor";
-import {
-  MAX_IMAGE_CONTAINER_WIDTH,
-  MAX_IMAGE_UPLOAD_PANEL_CONTENT_WIDTH,
-} from "@/features/image-area-selector/constants/layout.constant";
+import { MAX_IMAGE_CONTAINER_WIDTH } from "@/features/image-area-selector/constants/layout.constant";
 
 // types
 import { SelectionId } from "@/features/image-area-selector/types/selection.type";
 
 interface ImageAreaSelectorProps {
   containerHeight: number;
+  containerLeft: number;
   constrainX: (x: number) => [number, boolean];
   constrainY: (y: number) => [number, boolean];
 }
@@ -118,6 +116,7 @@ const ImageAreaSelector = (props: ImageAreaSelectorProps) => {
       <AllSelectionContainer
         {...PANEL_ACTIVE_CURSOR_ATTRIBUTE}
         $height={props.containerHeight}
+        $left={props.containerLeft}
         ref={selectionContainerRef}
         onMouseDown={(e) => {
           onTriggerActiveCursor(e);
@@ -181,15 +180,12 @@ const ImageAreaSelector = (props: ImageAreaSelectorProps) => {
 
 export default ImageAreaSelector;
 
-const containerLeft =
-  (MAX_IMAGE_UPLOAD_PANEL_CONTENT_WIDTH - MAX_IMAGE_CONTAINER_WIDTH) / 2;
-
-const AllSelectionContainer = styled.div<{ $height: number }>`
+const AllSelectionContainer = styled.div<{ $height: number; $left: number }>`
   &:hover {
     cursor: crosshair;
   }
   top: 0;
-  left: ${containerLeft}px;
+  left: ${(props) => props.$left}px;
   width: ${MAX_IMAGE_CONTAINER_WIDTH}px;
   height: ${(props) => props.$height}px;
   position: absolute;

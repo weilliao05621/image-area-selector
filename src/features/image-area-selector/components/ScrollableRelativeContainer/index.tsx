@@ -1,4 +1,4 @@
-import { type ReactNode } from "react";
+import { forwardRef, type ReactNode } from "react";
 
 import styled from "@emotion/styled";
 
@@ -9,9 +9,12 @@ interface ImageAreaSelectorProps {
   children: ReactNode;
 }
 
-function ScrollableRelativeContainer(props: ImageAreaSelectorProps) {
-  return <ScrollableWrapper>{props.children}</ScrollableWrapper>;
-}
+const ScrollableRelativeContainer = forwardRef<
+  HTMLDivElement,
+  ImageAreaSelectorProps
+>((props, ref) => {
+  return <ScrollableWrapper ref={ref}>{props.children}</ScrollableWrapper>;
+});
 
 export default ScrollableRelativeContainer;
 
