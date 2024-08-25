@@ -10,7 +10,9 @@ import type { PreviewData } from "./types";
 interface Store {
   imageAspectRadio: number;
   selections: Array<Selection>;
+  selectionLength: number;
   getSelection: (selectionId: SelectionId) => Selection;
+  getSelectionIndex: (selectionId: SelectionId) => number;
   setImageAspectRatio: (ratio: number) => void;
   setSelection: (selection: Selection) => void;
   updateSelection: (selection: Selection) => void;
@@ -21,6 +23,7 @@ interface Store {
 const useSelectionStore = create<Store>((set, get) => ({
   imageAspectRadio: 0,
   selections: [],
+  selectionLength: 0, // for index
 
   setImageAspectRatio: (ratio) => {
     set((state) => ({
@@ -30,10 +33,13 @@ const useSelectionStore = create<Store>((set, get) => ({
   },
   getSelection: (selectionId) =>
     get().selections.find((s) => s.id === selectionId)!,
+  getSelectionIndex: (selectionId) =>
+    get().selections.findIndex((s) => s.id === selectionId) + 1,
   setSelection: (selection) => {
     set((state) => ({
       ...state,
       selections: [...state.selections, selection],
+      selectionLength: state.selectionLength + 1,
     }));
   },
   updateSelection: (selection) => {
@@ -47,11 +53,11 @@ const useSelectionStore = create<Store>((set, get) => ({
       }),
     }));
   },
-
   deleteSelection: (id) => {
     set((state) => ({
       ...state,
       selections: state.selections.filter((s) => s.id !== id),
+      selectionLength: state.selectionLength - 1,
     }));
   },
 

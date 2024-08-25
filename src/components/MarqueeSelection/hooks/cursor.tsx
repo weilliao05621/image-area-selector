@@ -18,7 +18,7 @@ export const DEFAULT_RESIZE_CORNER_CURSORS = [
 const FLIPPED_RESIZE_CORNER_CURSORS = ["nesw-resize", "nwse-resize"] as const;
 
 // HOOKS
-export const useCursor = (getActiveSelectionId: () => SelectionId | null) => {
+export const useCursor = (activeSelectionId: SelectionId | null) => {
   const [activeCursor, setActiveCursor] = useState<string | null>(null);
   const recordCursorActive = useRef<boolean>(false);
 
@@ -35,20 +35,22 @@ export const useCursor = (getActiveSelectionId: () => SelectionId | null) => {
   const onUpdateResizeCornerCursor = (e: MouseEvent) => {
     if (!recordCursorActive.current) return;
     if (!activeCursor) return;
-    const isCorner = checkIsCornerCursor(activeCursor);
 
+    const isCorner = checkIsCornerCursor(activeCursor);
     if (!isCorner) return;
-    const selectionId = (e.target as HTMLElement).getAttribute(
-      ACTIVE_SELECTION_ID_ATTR,
-    );
-    const isHoveringActiveSelection = selectionId === getActiveSelectionId();
+
+    const target = e.target as HTMLElement;
+
+    const selectionId = target.getAttribute(ACTIVE_SELECTION_ID_ATTR);
+    const isHoveringActiveSelection = selectionId === activeSelectionId;
     if (!isHoveringActiveSelection) return;
-    const updateActiveCursor = (e.target as HTMLElement).getAttribute(
-      ACTIVE_CURSOR_DATA_ATTR,
-    );
+
+    const updateActiveCursor = target.getAttribute(ACTIVE_CURSOR_DATA_ATTR);
     if (!updateActiveCursor) return;
+
     const willBeCorner = checkIsCornerCursor(updateActiveCursor);
     if (!willBeCorner) return;
+
     setActiveCursor(updateActiveCursor);
   };
 

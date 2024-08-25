@@ -1,4 +1,4 @@
-import { memo, type MouseEvent } from "react";
+import { memo, useRef, type MouseEvent } from "react";
 
 import { useTheme } from "@emotion/react";
 import styled from "@emotion/styled";
@@ -6,6 +6,11 @@ import { DeleteOutlined } from "@ant-design/icons";
 
 // stores
 import useSelectionStore from "@/stores/selection/index.store";
+
+// utils
+import { getResizerCursors } from "./hooks/cursor";
+import { getBoundary } from "./utils";
+import { getSelectedAreaDimension } from "@/utils/selection.utils";
 
 // types
 import type { Selection, SelectionId } from "@/types/selection.type";
@@ -19,9 +24,6 @@ import {
   OVERLAPPED_WARNING_COLOR,
 } from "./constants";
 
-// utils
-import { getResizerCursors } from "./hooks/cursor";
-
 const ICON_MARGIN = 8;
 const EXTRA_SPACE_FOR_ICON = 8;
 const CORNER_SQUARE_SIZE = 6;
@@ -29,17 +31,25 @@ const EXTRA_RESIZE_INTERACTION_SPACE = CORNER_SQUARE_SIZE * 1.5;
 
 export function SelectionArea(props: {
   id?: Selection["id"];
-  top: number;
-  left: number;
-  width: number;
-  height: number;
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
   isOverlappingOnOthers: boolean;
-  getResizeElementCursor?: (
-    selection: Selection,
-  ) => (direction: DIRECTION) => string;
-  onMouseDown?: (e: MouseEvent, id: SelectionId, direction: DIRECTION) => void;
+  showOnlySelection?: boolean;
+  onStartUpdatingByResize?: (
+    e: MouseEvent,
+    id: SelectionId,
+    direction: DIRECTION,
+  ) => void;
+  onStartUpdatingByDrag?: (e: MouseEvent, id: SelectionId) => void;
 }) {
   const getSelection = useSelectionStore((state) => state.getSelection);
+
+  const left = getBoundary(props.startX, props.endX, "min");
+  const top = getBoundary(props.startY, props.endY, "min");
+  const width = getSelectedAreaDimension(props.startX, props.endX);
+  const height = getSelectedAreaDimension(props.startY, props.endY);
 
   const renderResizeHandles = (id: SelectionId) => {
     // make sure all handlers are binding to certain direction
@@ -126,8 +136,8 @@ export function SelectionArea(props: {
           key={`${id}-${index}`}
           {...resizerCursorData}
           onMouseDown={(e) => {
-            if (!props.onMouseDown) return;
-            props.onMouseDown(e, id, pos.direction);
+            if (!props.onStartUpdatingByResize) return;
+            props.onStartUpdatingByResize(e, id, pos.direction);
           }}
           style={{
             position: "absolute",
@@ -146,6 +156,7 @@ export function SelectionArea(props: {
       );
     });
   };
+
   return (
     <>
       <div
@@ -156,128 +167,43 @@ export function SelectionArea(props: {
               ? OVERLAPPED_WARNING_COLOR
               : DEFAULT_SELECTION_COLOR
           }`,
-          top: props.top,
-          left: props.left,
-          width: props.width,
-          height: props.height,
+          top,
+          left,
+          width,
+          height,
         }}
       />
-      {props.id && renderResizeHandles(props.id)}
+      {!props.showOnlySelection && props.id && (
+        <>
+          <DeleteSelectionIcon
+            top={top}
+            left={left}
+            width={width}
+            id={props.id}
+          />
+          <IndexDisplayer
+            top={top}
+            left={left}
+            width={width}
+            height={height}
+            id={props.id}
+          />
+          <DragDetector
+            top={top}
+            left={left}
+            width={width}
+            height={height}
+            onMouseDown={(e) => {
+              if (!props.onStartUpdatingByDrag) return;
+              props.onStartUpdatingByDrag(e, props.id!);
+            }}
+          />
+          {renderResizeHandles(props.id)}
+        </>
+      )}
     </>
   );
 }
-
-const DeleteSelectionIcon = (props: {
-  top: number;
-  left: number;
-  width: number;
-  id: SelectionId;
-  disabled?: boolean;
-}) => {
-  const deleteSelection = useSelectionStore((state) => state.deleteSelection);
-
-  return (
-    <StyledDeleteOutlined
-      style={{
-        top: props.top,
-        left: props.left + props.width + ICON_MARGIN,
-      }}
-      onClick={() => {
-        if (props.disabled) return;
-        if (!props.id) return;
-        deleteSelection(props.id);
-      }}
-    />
-  );
-};
-
-const IndexDisplayer = (props: {
-  top: number;
-  left: number;
-  width: number;
-  height: number;
-  index: number;
-}) => {
-  const theme = useTheme();
-  const iconSize = parseInt(theme.icon.size.sm);
-
-  const validIndexSpace = ICON_MARGIN + EXTRA_SPACE_FOR_ICON + iconSize;
-  const shouldPutIndexOutside =
-    props.width <= validIndexSpace || props.height <= validIndexSpace;
-
-  return (
-    <IndexCircle
-      style={{
-        top: shouldPutIndexOutside ? props.top : props.top + ICON_MARGIN,
-        left: shouldPutIndexOutside
-          ? props.left - ICON_MARGIN - iconSize
-          : props.left + ICON_MARGIN,
-      }}
-    >
-      <span>{props.index}</span>
-    </IndexCircle>
-  );
-};
-
-// TODO: 可以 wrap 進去
-export const DragDetector = (props: {
-  top: number;
-  left: number;
-  width: number;
-  height: number;
-  onMouseDown?: (e: MouseEvent<HTMLDivElement>) => void;
-}) => {
-  return (
-    <StyledDragDetector
-      {...DRAG_ACTIVE_CURSOR_ATTRIBUTE}
-      style={{
-        position: "absolute",
-        top: props.top + EXTRA_SPACE_FOR_ICON,
-        left: props.left + EXTRA_SPACE_FOR_ICON,
-        width: props.width - EXTRA_SPACE_FOR_ICON * 2,
-        height: props.height - EXTRA_SPACE_FOR_ICON * 2,
-      }}
-      onMouseDown={(e) => {
-        if (!props.onMouseDown) return;
-        props.onMouseDown(e);
-      }}
-    />
-  );
-};
-
-const StyledDragDetector = styled.div`
-  &:hover {
-    cursor: grab;
-  }
-`;
-
-const StyledDeleteOutlined = styled(DeleteOutlined)`
-  position: absolute;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: ${(props) => props.theme.icon.color.gray["1"]};
-  width: ${(props) => props.theme.icon.size.lg};
-  height: ${(props) => props.theme.icon.size.lg};
-  border: 1px solid ${(props) => props.theme.icon.color.gray["1"]};
-  border-radius: ${(props) => props.theme.borderRadius.sm};
-  background-color: ${(props) => props.theme.color.palette.white};
-  box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
-`;
-
-const IndexCircle = styled.div`
-  position: absolute;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: ${(props) => props.theme.color.palette.black};
-  width: ${(props) => props.theme.icon.size.sm};
-  height: ${(props) => props.theme.icon.size.sm};
-  padding: 2px;
-  font-size: 12px;
-  border-radius: ${(props) => props.theme.borderRadius.full};
-  background-color: ${(props) => props.theme.icon.color.gray["1"]}60;
-`;
 
 const ResizeSquare = styled.div<{
   $width: number;
@@ -288,13 +214,9 @@ const ResizeSquare = styled.div<{
   &:hover {
     cursor: ${(props) => props.$cursor};
   }
-  &::after:hover {
-    cursor: inherit;
-  }
   &::after {
     content: "";
     display: block;
-    cursor: inherit;
     width: ${(props) => props.$width}px;
     height: ${(props) => props.$height}px;
     margin: ${(props) => {
@@ -323,6 +245,129 @@ const ResizeSquare = styled.div<{
   }
 `;
 
+const DeleteSelectionIcon = (props: {
+  id: SelectionId;
+  top: number;
+  left: number;
+  width: number;
+}) => {
+  const deleteSelection = useSelectionStore((state) => state.deleteSelection);
+
+  return (
+    <StyledDeleteOutlined
+      style={{
+        top: props.top,
+        left: props.left + props.width + ICON_MARGIN,
+      }}
+      onClick={() => {
+        deleteSelection(props.id);
+      }}
+    />
+  );
+};
+
+const StyledDeleteOutlined = styled(DeleteOutlined)`
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: ${(props) => props.theme.icon.color.gray["1"]};
+  width: ${(props) => props.theme.icon.size.lg};
+  height: ${(props) => props.theme.icon.size.lg};
+  border: 1px solid ${(props) => props.theme.icon.color.gray["1"]};
+  border-radius: ${(props) => props.theme.borderRadius.sm};
+  background-color: ${(props) => props.theme.color.palette.white};
+  box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
+`;
+
+const IndexDisplayer = (props: {
+  id: SelectionId;
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+}) => {
+  const theme = useTheme();
+
+  const iconSize = parseInt(theme.icon.size.sm);
+
+  const validIndexSpace = ICON_MARGIN + EXTRA_SPACE_FOR_ICON + iconSize;
+  const shouldPutIndexOutside =
+    props.width <= validIndexSpace || props.height <= validIndexSpace;
+
+  return (
+    <IndexCircle
+      style={{
+        top: shouldPutIndexOutside ? props.top : props.top + ICON_MARGIN,
+        left: shouldPutIndexOutside
+          ? props.left - ICON_MARGIN - iconSize
+          : props.left + ICON_MARGIN,
+      }}
+    >
+      <Index id={props.id} />
+    </IndexCircle>
+  );
+};
+
+// prevent the whole selection re-rendering
+const Index = (props: { id: SelectionId }) => {
+  // stores
+  const getSelectionIndex = useSelectionStore(
+    (state) => state.getSelectionIndex,
+  );
+  const selectionLength = useSelectionStore((state) => state.selectionLength);
+
+  // hooks
+  const index = useRef<number>(1);
+
+  // reduce index calculation
+  if (selectionLength > -1) {
+    index.current = getSelectionIndex(props.id);
+  }
+
+  return <span>{index.current}</span>;
+};
+
+const IndexCircle = styled.div`
+  position: absolute;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: ${(props) => props.theme.color.palette.black};
+  width: ${(props) => props.theme.icon.size.sm};
+  height: ${(props) => props.theme.icon.size.sm};
+  padding: 2px;
+  font-size: 12px;
+  border-radius: ${(props) => props.theme.borderRadius.full};
+  background-color: ${(props) => props.theme.icon.color.gray["1"]}60;
+`;
+
+const DragDetector = (props: {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+  onMouseDown: (e: MouseEvent<HTMLDivElement>) => void;
+}) => {
+  return (
+    <StyledDragDetector
+      {...DRAG_ACTIVE_CURSOR_ATTRIBUTE}
+      style={{
+        position: "absolute",
+        top: props.top + EXTRA_SPACE_FOR_ICON / 2,
+        left: props.left + EXTRA_SPACE_FOR_ICON / 2,
+        width: props.width - EXTRA_SPACE_FOR_ICON,
+        height: props.height - EXTRA_SPACE_FOR_ICON,
+      }}
+      onMouseDown={props.onMouseDown}
+    />
+  );
+};
+
+const StyledDragDetector = styled.div`
+  &:hover {
+    cursor: grab;
+  }
+`;
+
 export const MemoSelectionArea = memo(SelectionArea);
-export const MemoDeleteSelectionIcon = memo(DeleteSelectionIcon);
-export const MemoIndexDisplayer = memo(IndexDisplayer);

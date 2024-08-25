@@ -1,4 +1,4 @@
-import { useRef, Fragment, type MouseEvent } from "react";
+import { useRef, type MouseEvent } from "react";
 
 import styled from "@emotion/styled";
 import { css, Global } from "@emotion/react";
@@ -16,35 +16,20 @@ import { type SelectionId } from "@/types/selection.type";
 import { DIRECTION } from "./types";
 
 // constants
-import {
-  MemoSelectionArea,
-  DragDetector,
-  SelectionArea,
-  MemoDeleteSelectionIcon,
-  MemoIndexDisplayer,
-} from "./SelectionArea";
+import { MemoSelectionArea, SelectionArea } from "./SelectionArea";
 import {
   MAX_IMAGE_CONTAINER_WIDTH,
   MAX_IMAGE_UPLOAD_PANEL_CONTENT_WIDTH,
 } from "@/constants/layout.constant";
 import { PANEL_ACTIVE_CURSOR_ATTRIBUTE } from "./constants";
 
-// utils
-import { getBoundary } from "./utils";
-import { getSelectedAreaDimension } from "@/utils/selection.utils";
-
-interface MarqueeSelectionProps {
+interface ImageAreaSelectorProps {
   containerHeight: number;
   constrainX: (x: number) => [number, boolean];
   constrainY: (y: number) => [number, boolean];
 }
 
-/**
- * @description this component is heavily depended on currentSelection & selections,
- *              which are both states that are updated at almost every interaction.
- *              use optimization hooks (e.g. useEventCallback) for preventing re-rendering unchanged selection.
- * */
-const MarqueeSelection = (props: MarqueeSelectionProps) => {
+const ImageAreaSelector = (props: ImageAreaSelectorProps) => {
   // STORES
   const selections = useSelectionStore((state) => state.selections);
   const setSelection = useSelectionStore((state) => state.setSelection);
@@ -56,7 +41,7 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
   // HOOKS
   const getSelectionContainerElm = useRef<() => HTMLDivElement | null>(
     () => selectionContainerRef.current,
-  );
+  ).current;
   const {
     currentSelection,
     creatingStatus,
@@ -65,7 +50,7 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
     onEndCreatingSelection,
   } = useCreateSelection<HTMLDivElement>(
     selections,
-    getSelectionContainerElm.current,
+    getSelectionContainerElm,
     {
       x: props.constrainX,
       y: props.constrainY,
@@ -80,7 +65,7 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
     onEndUpdatingSelection,
   } = useUpdateSelection<HTMLDivElement>(
     selections,
-    getSelectionContainerElm.current,
+    getSelectionContainerElm,
 
     {
       x: props.constrainX,
@@ -94,15 +79,25 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
     onTriggerActiveCursor,
     onUpdateResizeCornerCursor,
     resetActiveCursor,
-  } = useCursor(() => updatingStatus.activeSelectionId);
+  } = useCursor(updatingStatus.activeSelectionId);
 
-  const onStartUpdateByResizer = useEventCallback<
+  const onStartUpdatingByResize = useEventCallback<
     [MouseEvent, SelectionId, DIRECTION],
     void
   >((e, id, direction) => {
     onStartUpdatingSelection(e, {
       id,
       direction,
+    });
+  });
+
+  const onStartUpdatingByDrag = useEventCallback<
+    [MouseEvent, SelectionId],
+    void
+  >((e, id) => {
+    onStartUpdatingSelection(e, {
+      id,
+      direction: DIRECTION.NONE,
     });
   });
 
@@ -117,7 +112,7 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
           `}
         />
       )}
-      <SelectionContainer
+      <AllSelectionContainer
         {...PANEL_ACTIVE_CURSOR_ATTRIBUTE}
         $height={props.containerHeight}
         ref={selectionContainerRef}
@@ -127,120 +122,63 @@ const MarqueeSelection = (props: MarqueeSelectionProps) => {
         }}
         onMouseMove={(e) => {
           onUpdateResizeCornerCursor(e);
-          // all have early return. will auto detect which one to use
+          // reduce event listeners (all have early return. will auto detect which one to use)
           onCreatingSelection(e);
           onUpdatingSelectionByResize(e);
           onUpdatingSelectionByDrag(e);
         }}
         onMouseUp={() => {
           resetActiveCursor();
-          // all have early return. will auto detect which one to use
+          // reduce event listeners (all have early return. will auto detect which one to use)
           onEndCreatingSelection();
           onEndUpdatingSelection();
         }}
       >
-        {selections.map((selection, index) => {
-          const left = getBoundary(selection.startX, selection.endX, "min");
-          const top = getBoundary(selection.startY, selection.endY, "min");
-          const width = getSelectedAreaDimension(
-            selection.startX,
-            selection.endX,
-          );
-          const height = getSelectedAreaDimension(
-            selection.startY,
-            selection.endY,
-          );
-          return (
-            <Fragment key={selection.id}>
-              <MemoSelectionArea
-                id={selection.id}
-                top={top}
-                left={left}
-                width={width}
-                height={height}
-                isOverlappingOnOthers={
-                  updatingStatus.isUpdatingSelectionOverlapping &&
-                  updatingStatus.activeSelectionId === selection.id
-                }
-                onMouseDown={onStartUpdateByResizer}
-              />
-              {/* TODO: wrap into selection area */}
-              <MemoDeleteSelectionIcon
-                top={top}
-                left={left}
-                width={width}
-                id={selection.id}
-                disabled={
-                  updatingStatus.activeSelectionId
-                    ? updatingStatus.activeSelectionId !== selection.id
-                    : false
-                }
-              />
-              {/* TODO: wrap into selection area */}
-              <DragDetector
-                top={top}
-                left={left}
-                width={width}
-                height={height}
-                onMouseDown={(e) => {
-                  onStartUpdatingSelection(e, {
-                    id: selection.id,
-                    direction: DIRECTION.NONE,
-                  });
-                }}
-              />
-              {/* TODO: wrap into selection area (by portal to prevent index re-rendering) */}
-              <MemoIndexDisplayer
-                top={top}
-                left={left}
-                width={width}
-                height={height}
-                index={index + 1}
-              />
-            </Fragment>
-          );
-        })}
+        {selections.map((selection) => (
+          <MemoSelectionArea
+            key={selection.id}
+            id={selection.id}
+            startX={selection.startX}
+            startY={selection.startY}
+            endX={selection.endX}
+            endY={selection.endY}
+            isOverlappingOnOthers={
+              updatingStatus.isUpdatingSelectionOverlapping &&
+              updatingStatus.activeSelectionId === selection.id
+            }
+            onStartUpdatingByResize={onStartUpdatingByResize}
+            onStartUpdatingByDrag={onStartUpdatingByDrag}
+          />
+        ))}
         {currentSelection && (
-          // TODO: refactor this login inside SelectionArea
           <SelectionArea
-            left={getBoundary(
-              currentSelection.startX,
-              currentSelection.endX,
-              "min",
-            )}
-            top={getBoundary(
-              currentSelection.startY,
-              currentSelection.endY,
-              "min",
-            )}
-            width={getSelectedAreaDimension(
-              currentSelection.startX,
-              currentSelection.endX,
-            )}
-            height={getSelectedAreaDimension(
-              currentSelection.startY,
-              currentSelection.endY,
-            )}
+            showOnlySelection
+            startX={currentSelection.startX}
+            startY={currentSelection.startY}
+            endX={currentSelection.endX}
+            endY={currentSelection.endY}
             isOverlappingOnOthers={
               creatingStatus.isCreatingSelectionOverlapping
             }
           />
         )}
-      </SelectionContainer>
+      </AllSelectionContainer>
     </>
   );
 };
 
-const SelectionContainer = styled.div<{ $height: number }>`
+export default ImageAreaSelector;
+
+const containerLeft =
+  (MAX_IMAGE_UPLOAD_PANEL_CONTENT_WIDTH - MAX_IMAGE_CONTAINER_WIDTH) / 2;
+
+const AllSelectionContainer = styled.div<{ $height: number }>`
   &:hover {
     cursor: crosshair;
   }
   top: 0;
-  left: ${(MAX_IMAGE_UPLOAD_PANEL_CONTENT_WIDTH - MAX_IMAGE_CONTAINER_WIDTH) /
-  2}px;
+  left: ${containerLeft}px;
   width: ${MAX_IMAGE_CONTAINER_WIDTH}px;
   height: ${(props) => props.$height}px;
   position: absolute;
 `;
-
-export default MarqueeSelection;
