@@ -1,6 +1,7 @@
 import { useRef, type MouseEvent } from "react";
 
 import styled from "@emotion/styled";
+import { css, Global } from "@emotion/react";
 
 // stores
 import useSelectionStore from "@/features/image-area-selector/stores/selection/index.store";
@@ -11,9 +12,11 @@ import { MemoSelectionArea, SelectionArea } from "./components/SelectionArea";
 // hooks
 import useEventCallback from "@/hooks/useEventCallback";
 import { useCreateSelection, useUpdateSelection } from "./hooks/position";
+import { useCursor } from "./hooks/cursor";
 
 // constants
 import { DIRECTION } from "./constants/position";
+import { PANEL_ACTIVE_CURSOR_ATTRIBUTE } from "./constants/cursor";
 import {
   MAX_IMAGE_CONTAINER_WIDTH,
   MAX_IMAGE_UPLOAD_PANEL_CONTENT_WIDTH,
@@ -73,6 +76,13 @@ const ImageSelections = (props: ImageSelectionsProps) => {
     updateSelection,
   );
 
+  const {
+    activeCursor,
+    onTriggerActiveCursor,
+    onUpdateResizeCornerCursor,
+    resetActiveCursor,
+  } = useCursor(updatingStatus.activeSelectionId);
+
   const onStartUpdatingByResize = useEventCallback<
     [MouseEvent, SelectionId, DIRECTION],
     void
@@ -94,51 +104,69 @@ const ImageSelections = (props: ImageSelectionsProps) => {
   });
 
   return (
-    <AllSelectionContainer
-      $height={props.containerHeight}
-      ref={selectionContainerRef}
-      onMouseDown={(e) => {
-        onStartCreatingSelection(e);
-      }}
-      onMouseMove={(e) => {
-        // reduce event listeners (all have early return. will auto detect which one to use)
-        onCreatingSelection(e);
-        onUpdatingSelectionByResize(e);
-        onUpdatingSelectionByDrag(e);
-      }}
-      onMouseUp={() => {
-        // reduce event listeners (all have early return. will auto detect which one to use)
-        onEndCreatingSelection();
-        onEndUpdatingSelection();
-      }}
-    >
-      {selections.map((selection) => (
-        <MemoSelectionArea
-          key={selection.id}
-          id={selection.id}
-          startX={selection.startX}
-          startY={selection.startY}
-          endX={selection.endX}
-          endY={selection.endY}
-          isOverlappingOnOthers={
-            updatingStatus.isUpdatingSelectionOverlapping &&
-            updatingStatus.activeSelectionId === selection.id
-          }
-          onStartUpdatingByResize={onStartUpdatingByResize}
-          onStartUpdatingByDrag={onStartUpdatingByDrag}
-        />
-      ))}
-      {currentSelection && (
-        <SelectionArea
-          showOnlySelection
-          startX={currentSelection.startX}
-          startY={currentSelection.startY}
-          endX={currentSelection.endX}
-          endY={currentSelection.endY}
-          isOverlappingOnOthers={creatingStatus.isCreatingSelectionOverlapping}
+    <>
+      {activeCursor && (
+        <Global
+          styles={css`
+            * {
+              cursor: ${activeCursor} !important;
+            }
+          `}
         />
       )}
-    </AllSelectionContainer>
+      <AllSelectionContainer
+        {...PANEL_ACTIVE_CURSOR_ATTRIBUTE}
+        $height={props.containerHeight}
+        ref={selectionContainerRef}
+        onMouseDown={(e) => {
+          onTriggerActiveCursor(e);
+
+          onStartCreatingSelection(e);
+        }}
+        onMouseMove={(e) => {
+          onUpdateResizeCornerCursor(e);
+          // reduce event listeners (all have early return. will auto detect which one to use)
+          onCreatingSelection(e);
+          onUpdatingSelectionByResize(e);
+          onUpdatingSelectionByDrag(e);
+        }}
+        onMouseUp={() => {
+          resetActiveCursor();
+          // reduce event listeners (all have early return. will auto detect which one to use)
+          onEndCreatingSelection();
+          onEndUpdatingSelection();
+        }}
+      >
+        {selections.map((selection) => (
+          <MemoSelectionArea
+            key={selection.id}
+            id={selection.id}
+            startX={selection.startX}
+            startY={selection.startY}
+            endX={selection.endX}
+            endY={selection.endY}
+            isOverlappingOnOthers={
+              updatingStatus.isUpdatingSelectionOverlapping &&
+              updatingStatus.activeSelectionId === selection.id
+            }
+            onStartUpdatingByResize={onStartUpdatingByResize}
+            onStartUpdatingByDrag={onStartUpdatingByDrag}
+          />
+        ))}
+        {currentSelection && (
+          <SelectionArea
+            showOnlySelection
+            startX={currentSelection.startX}
+            startY={currentSelection.startY}
+            endX={currentSelection.endX}
+            endY={currentSelection.endY}
+            isOverlappingOnOthers={
+              creatingStatus.isCreatingSelectionOverlapping
+            }
+          />
+        )}
+      </AllSelectionContainer>
+    </>
   );
 };
 

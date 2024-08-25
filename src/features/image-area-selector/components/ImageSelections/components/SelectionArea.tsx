@@ -8,8 +8,9 @@ import { DeleteOutlined } from "@ant-design/icons";
 import useSelectionStore from "@/features/image-area-selector/stores/selection/index.store";
 
 // utils
-import { getBoundary } from "@/features/image-area-selector/components/ImageSelections/utils";
 import { getSelectedAreaDimension } from "@/features/image-area-selector/utils/selection.util";
+import { getBoundary } from "../utils";
+import { getResizerCursors } from "../hooks/cursor";
 
 // constants
 import {
@@ -17,6 +18,10 @@ import {
   DIRECTION,
   OVERLAPPED_WARNING_COLOR,
 } from "../constants/position";
+import {
+  DRAG_ACTIVE_CURSOR_ATTRIBUTE,
+  getResizerActiveCursorAttribute,
+} from "../constants/cursor";
 
 // types
 import { SelectionId } from "@/features/image-area-selector/types/selection.type";
@@ -122,10 +127,16 @@ export function SelectionArea(props: {
       ? OVERLAPPED_WARNING_COLOR
       : DEFAULT_SELECTION_COLOR;
 
+    const cursors = getResizerCursors(selection);
+
     return positions.map((pos, index) => {
+      const cursor = cursors[pos.direction];
+      const resizerCursorData = getResizerActiveCursorAttribute(cursor, id);
+
       return (
         <ResizeSquare
           key={`${id}-${index}`}
+          {...resizerCursorData}
           onMouseDown={(e) => {
             if (!props.onStartUpdatingByResize) return;
             props.onStartUpdatingByResize(e, id, pos.direction);
@@ -142,6 +153,7 @@ export function SelectionArea(props: {
           $direction={pos.direction}
           $height={pos.height}
           $width={pos.width}
+          $cursor={cursor}
         />
       );
     });
@@ -199,7 +211,9 @@ const ResizeSquare = styled.div<{
   $width: number;
   $height: number;
   $direction: DIRECTION;
+  $cursor: string;
 }>`
+  cursor: ${(props) => props.$cursor};
   &::after {
     content: "";
     display: block;
@@ -337,6 +351,7 @@ const DragDetector = (props: {
 }) => {
   return (
     <StyledDragDetector
+      {...DRAG_ACTIVE_CURSOR_ATTRIBUTE}
       style={{
         position: "absolute",
         top: props.top + EXTRA_SPACE_FOR_ICON / 2,
