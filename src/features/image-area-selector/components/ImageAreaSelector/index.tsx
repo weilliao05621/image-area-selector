@@ -1,4 +1,4 @@
-import { useRef, type MouseEvent } from "react";
+import { useRef, Fragment, type MouseEvent } from "react";
 
 import styled from "@emotion/styled";
 import { css, Global } from "@emotion/react";
@@ -8,6 +8,7 @@ import useSelectionStore from "@/features/image-area-selector/stores/selection";
 
 // components
 import { MemoSelectionArea, SelectionArea } from "./components/SelectionArea";
+import MemoIndexDisplayer from "./components/IndexCircle";
 
 // hooks
 import useEventCallback from "@/hooks/useEventCallback";
@@ -137,21 +138,29 @@ const ImageAreaSelector = (props: ImageAreaSelectorProps) => {
           onEndUpdatingSelection();
         }}
       >
-        {selections.map((selection) => (
-          <MemoSelectionArea
-            key={selection.id}
-            id={selection.id}
-            startX={selection.startX}
-            startY={selection.startY}
-            endX={selection.endX}
-            endY={selection.endY}
-            isOverlappingOnOthers={
-              updatingStatus.isUpdatingSelectionOverlapping &&
-              updatingStatus.activeSelectionId === selection.id
-            }
-            onStartUpdatingByResize={onStartUpdatingByResize}
-            onStartUpdatingByDrag={onStartUpdatingByDrag}
-          />
+        {selections.map((selection, index) => (
+          <Fragment key={selection.id}>
+            <MemoSelectionArea
+              id={selection.id}
+              startX={selection.startX}
+              startY={selection.startY}
+              endX={selection.endX}
+              endY={selection.endY}
+              isOverlappingOnOthers={
+                updatingStatus.isUpdatingSelectionOverlapping &&
+                updatingStatus.activeSelectionId === selection.id
+              }
+              onStartUpdatingByResize={onStartUpdatingByResize}
+              onStartUpdatingByDrag={onStartUpdatingByDrag}
+            />
+            <MemoIndexDisplayer
+              startX={selection.startX}
+              startY={selection.startY}
+              endX={selection.endX}
+              endY={selection.endY}
+              index={index + 1}
+            />
+          </Fragment>
         ))}
         {currentSelection && (
           <SelectionArea

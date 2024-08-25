@@ -1,6 +1,5 @@
-import { memo, useRef, type MouseEvent } from "react";
+import { memo, type MouseEvent } from "react";
 
-import { useTheme } from "@emotion/react";
 import styled from "@emotion/styled";
 import { DeleteOutlined } from "@ant-design/icons";
 
@@ -183,13 +182,6 @@ export function SelectionArea(props: {
             width={width}
             id={props.id}
           />
-          <IndexDisplayer
-            top={top}
-            left={left}
-            width={width}
-            height={height}
-            id={props.id}
-          />
           <DragDetector
             top={top}
             left={left}
@@ -278,68 +270,6 @@ const StyledDeleteOutlined = styled(DeleteOutlined)`
   border-radius: ${(props) => props.theme.borderRadius.sm};
   background-color: ${(props) => props.theme.color.palette.white};
   box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
-`;
-
-const IndexDisplayer = (props: {
-  id: SelectionId;
-  top: number;
-  left: number;
-  width: number;
-  height: number;
-}) => {
-  const theme = useTheme();
-
-  const iconSize = parseInt(theme.icon.size.sm);
-
-  const validIndexSpace = ICON_MARGIN + EXTRA_SPACE_FOR_ICON + iconSize;
-  const shouldPutIndexOutside =
-    props.width <= validIndexSpace || props.height <= validIndexSpace;
-
-  return (
-    <IndexCircle
-      style={{
-        top: shouldPutIndexOutside ? props.top : props.top + ICON_MARGIN,
-        left: shouldPutIndexOutside
-          ? props.left - ICON_MARGIN - iconSize
-          : props.left + ICON_MARGIN,
-      }}
-    >
-      <Index id={props.id} />
-    </IndexCircle>
-  );
-};
-
-// prevent the whole selection re-rendering
-const Index = (props: { id: SelectionId }) => {
-  // stores
-  const getSelectionIndex = useSelectionStore(
-    (state) => state.getSelectionIndex,
-  );
-  const selectionLength = useSelectionStore((state) => state.selectionLength);
-
-  // hooks
-  const index = useRef<number>(1);
-
-  // reduce index calculation
-  if (selectionLength > -1) {
-    index.current = getSelectionIndex(props.id);
-  }
-
-  return <span>{index.current}</span>;
-};
-
-const IndexCircle = styled.div`
-  position: absolute;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: ${(props) => props.theme.color.palette.black};
-  width: ${(props) => props.theme.icon.size.sm};
-  height: ${(props) => props.theme.icon.size.sm};
-  padding: 2px;
-  font-size: 12px;
-  border-radius: ${(props) => props.theme.borderRadius.full};
-  background-color: ${(props) => props.theme.icon.color.gray["1"]}60;
 `;
 
 const DragDetector = (props: {
