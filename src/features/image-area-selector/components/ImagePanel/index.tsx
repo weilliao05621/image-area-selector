@@ -7,6 +7,7 @@ import useSelectionStore from "@/features/image-area-selector/stores/selection";
 import ImageUploadPanelLayout from "../ImagePanelLayout";
 import ImageUploader from "../ImageUploader";
 import UploadedImage from "../UploadedImage";
+import ScrollableRelativeContainer from "../ScrollableRelativeContainer";
 import ImageAreaSelector from "../ImageAreaSelector";
 
 // constants
@@ -23,6 +24,8 @@ const ImagePanel = () => {
     (state) => state.setImageAspectRatio,
   );
 
+  const imageAspectRadio = useSelectionStore((state) => state.imageAspectRadio);
+
   return (
     <ImageUploadPanelLayout>
       {!hasUploadedImage ? (
@@ -35,9 +38,20 @@ const ImagePanel = () => {
         />
       ) : (
         image && (
-          <ImageAreaSelector imageHeight={image.height}>
+          <ScrollableRelativeContainer>
             <UploadedImage imageUrl={image.url} />
-          </ImageAreaSelector>
+            <ImageAreaSelector
+              containerHeight={imageAspectRadio * image.height}
+              constrainX={(x) => [
+                Math.min(Math.max(x, 0), MAX_IMAGE_CONTAINER_WIDTH),
+                x > 0 && x < MAX_IMAGE_CONTAINER_WIDTH,
+              ]}
+              constrainY={(y) => [
+                Math.min(Math.max(y, 0), image.height * imageAspectRadio),
+                y > 0 && y < image.height * imageAspectRadio,
+              ]}
+            />
+          </ScrollableRelativeContainer>
         )
       )}
     </ImageUploadPanelLayout>
